@@ -1,0 +1,134 @@
+<!doctype html><html lang=zh><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
+<title>SKU 管理后台</title><style>
+*{box-sizing:border-box}body{font-family:-apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;margin:0;background:#f4f5f7;color:#222}
+header{background:#111;color:#ffd400;padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}header h1{font-size:20px;margin:0;flex:1}
+header a{color:#fff}nav{display:flex;gap:4px;padding:8px;background:#222;overflow-x:auto}nav button{flex:1;min-width:90px;padding:10px;border:0;border-radius:8px;background:#333;color:#eee;font-size:15px}
+nav button.on{background:#ffd400;color:#000;font-weight:700}section{display:none;padding:12px;max-width:1100px;margin:auto}section.on{display:block}
+.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px #0001}
+textarea{width:100%;min-height:140px;font-family:monospace;font-size:14px;padding:8px}
+button.b{padding:10px 14px;border:0;border-radius:8px;background:#ffd400;font-size:15px;font-weight:700;margin:4px 4px 4px 0}button.g{background:#e3e5e8;font-weight:400}button.r{background:#e74c3c;color:#fff}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{border-bottom:1px solid #e5e5e5;padding:6px 4px;text-align:left;vertical-align:middle}th{background:#fafafa;position:sticky;top:0}
+td input,td select{width:100%;padding:6px;font-size:14px;border:1px solid #ddd;border-radius:6px}td.sku{font-family:monospace;font-size:13px;word-break:break-all}
+.err{background:#fde8e8}.msg{padding:8px;border-radius:8px;margin:6px 0}.ok{background:#e6f7e9}.bad{background:#fde8e8}
+.bar{height:10px;background:#eee;border-radius:5px;overflow:hidden}.bar i{display:block;height:100%;background:#2ecc71}
+.kpi{display:flex;gap:10px;flex-wrap:wrap}.kpi div{flex:1;min-width:120px;background:#fff;border-radius:12px;padding:12px;text-align:center}.kpi b{display:block;font-size:28px}
+label.in{display:inline-flex;gap:6px;align-items:center;margin:4px 12px 4px 0}label.in input,label.in select{padding:6px;font-size:15px}
+@media(max-width:700px){.hidem{display:none}}
+</style>
+<header><h1>📦 SKU 管理后台</h1><span id=pname></span><a href="scanner.html">→ 扫描页</a></header>
+<nav><button data-t=import class=on>1 导入</button><button data-t=alloc>2 分配库位</button><button data-t=dash>3 进度看板</button><button data-t=data>4 数据/设置</button></nav>
+
+<section id=import class=on>
+ <div class=card><h3>导入柜子 SKU 清单</h3>
+  <p>粘贴文本/表格（每行：SKU、品名、箱数；Excel 直接复制即可），或上传 CSV / XLSX / PDF（入库预报格式）。同一 SKU 多行会自动合并箱数。</p>
+  <label class=in>柜号/名称 <input id=projName placeholder="如 IB040260813"></label>
+  <textarea id=paste placeholder="A089-HUIXXZ-F	灰色小枕	16&#10;A089-ZLANCD-Q,藏蓝床单,6"></textarea>
+  <div><button class=b onclick=doPaste()>解析文本</button>
+   <label class="b g" style="display:inline-block;cursor:pointer">📄 上传 CSV/XLSX/PDF<input type=file id=file accept=".csv,.txt,.xlsx,.xls,.pdf" hidden></label>
+   <label class=in><input type=checkbox id=replace checked> 替换现有清单</label></div>
+  <div id=impMsg></div></div>
+ <div class=card><h3>SKU 映射表 <small id=cnt></small></h3>
+  <div style="overflow:auto;max-height:60vh"><table id=mapT></table></div>
+  <button class="b g" onclick=addRow()>+ 新增一行</button></div>
+</section>
+
+<section id=alloc>
+ <div class=card><h3>全局规则</h3>
+  <label class=in>默认方式 <select id=defMode><option value=pallet>按托盘（每托 N 箱）</option><option value=single>单一区域</option></select></label>
+  <label class=in>每托箱数 N <input id=defN type=number min=1 style="width:80px"></label>
+  <label class=in>排 <input id=rows style="width:90px"></label>
+  <label class=in>每排最多 <input id=perRow type=number style="width:80px"></label>
+  <div><button class=b onclick=doAuto(true)>自动分配（保留手动修改）</button><button class="b g" onclick=doAuto(false)>全部重新分配</button>
+  <button class=b style="background:#2ecc71;color:#fff" onclick=publish()>✅ 保存并发布到扫描页</button></div>
+  <div id=allocMsg></div></div>
+ <div class=card><div style="overflow:auto;max-height:65vh"><table id=allocT></table></div>
+  <p style="font-size:13px;color:#666">库位可直接改：如 <code>A1 A2 A3</code> 或 <code>A1-A3</code>；单一区域填字母如 <code>B</code>。手动改过的行会被锁定 🔒，自动分配不会覆盖。</p></div>
+</section>
+
+<section id=dash>
+ <div class=kpi><div>SKU<b id=kSku></b></div><div>总箱数<b id=kBox></b></div><div>已扫<b id=kScan></b></div><div>完成<b id=kPct></b></div></div>
+ <div class=card><h3>各 SKU 进度</h3><input id=flt placeholder="搜索 SKU" style="padding:8px;width:100%;margin-bottom:8px">
+  <div style="overflow:auto;max-height:55vh"><table id=progT></table></div>
+  <button class="b g" onclick="dl('progress.csv',Core.exportProgressCsv(P,S))">导出进度 CSV</button></div>
+ <div class=card><h3>扫描记录 <small>（本设备）</small></h3><div style="overflow:auto;max-height:40vh"><table id=histT></table></div>
+  <button class="b g" onclick="dl('scan_history.csv',Core.exportHistCsv(S))">导出记录 CSV</button>
+  <button class="b r" onclick=resetCounts()>清零计数和记录</button></div>
+</section>
+
+<section id=data>
+ <div class=card><h3>导出 / 导入（在其他手机或设备间共享映射）</h3>
+  <button class=b onclick="dl('sku-station-'+P.id+'.json',Core.exportBundle(P,S))">导出 JSON（含计数）</button>
+  <button class="b g" onclick="dl('sku-project-'+P.id+'.json',Core.exportBundle(P,null))">仅导出映射</button>
+  <label class="b g" style="display:inline-block;cursor:pointer">导入 JSON<input type=file id=jfile accept=".json" hidden></label>
+  <p style="font-size:13px;color:#666">扫描页在同一浏览器中会立即使用发布的映射；其他设备可在扫描页“导入映射”中导入此 JSON。以后接入服务器后，设备每 30 分钟自动同步。</p></div>
+ <div class=card><h3>服务器同步（预留）</h3><label class=in>服务器地址 <input id=syncUrl placeholder="https://..." style="width:260px"></label><button class="b g" onclick=saveSync()>保存</button>
+  <p style="font-size:13px;color:#666">接口：GET/PUT /api/project，POST /api/scans。留空则只在本机保存。</p></div>
+ <div class=card><button class="b r" onclick=newProj()>新建空项目（清空映射）</button></div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="core.js"></script><script src="plan_seed.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let P=Core.loadProject(window.SEED_PROJECT?JSON.parse(JSON.stringify(SEED_PROJECT)):null), S=Core.loadState(P);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const save=()=>{Core.saveProject(P);renderAll()};
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button,section").forEach(x=>x.classList.remove("on"));b.classList.add("on");$(b.dataset.t).classList.add("on");renderAll()});
+function msg(el,txt,ok){$(el).innerHTML=`<div class="msg ${ok?"ok":"bad"}">${txt}</div>`}
+function dl(name,txt){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/plain;charset=utf-8"}));a.download=name;a.click()}
+// ----- import -----
+function ingest(list,src){if(!list.length){msg("impMsg","没有识别到 SKU，请检查格式",false);return}
+  if($("projName").value)P.name=$("projName").value; Core.mergeSkus(P,list,$("replace").checked);
+  msg("impMsg",`从${src}导入 ${list.length} 个 SKU，共 ${list.reduce((a,x)=>a+x.boxes,0)} 箱。下一步：分配库位。`,true);save()}
+function doPaste(){ingest(Core.parseText($("paste").value),"文本")}
+$("file").onchange=async e=>{const f=e.target.files[0];if(!f)return;const n=f.name.toLowerCase();try{
+  if(n.endsWith(".pdf")){pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+    const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let txt="";
+    for(let i=1;i<=pdf.numPages;i++){const c=await (await pdf.getPage(i)).getTextContent();const lines=new Map();
+      for(const it of c.items){const y=Math.round(it.transform[5]);(lines.get(y)||lines.set(y,[]).get(y)).push(it)}
+      [...lines.entries()].sort((a,b)=>b[0]-a[0]).forEach(([y,its])=>{txt+=its.sort((a,b)=>a.transform[4]-b.transform[4]).map(t=>t.str).join("  ")+"\n"})}
+    $("paste").value=txt;ingest(Core.parseText(txt),"PDF")}
+  else if(n.endsWith(".xlsx")||n.endsWith(".xls")){const wb=XLSX.read(await f.arrayBuffer());const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
+    const t=Core.rowsToText(rows);$("paste").value=t;ingest(Core.parseText(t),"Excel")}
+  else{const t=await f.text();$("paste").value=t;ingest(Core.parseText(t),"CSV")}}catch(x){msg("impMsg","读取失败："+x,false)}e.target.value=""};
+function renderMap(){$("cnt").textContent=`${P.skus.length} 个 SKU · ${P.skus.reduce((a,s)=>a+(+s.boxes||0),0)} 箱`;
+  $("mapT").innerHTML="<tr><th>SKU</th><th>品名</th><th style='width:80px'>箱数</th><th style='width:40px'></th></tr>"+P.skus.map((s,i)=>
+  `<tr><td><input value="${esc(s.sku)}" onchange="P.skus[${i}].sku=Core.normSku(this.value);save()"></td><td><input value="${esc(s.name)}" onchange="P.skus[${i}].name=this.value;save()"></td>
+   <td><input type=number value="${s.boxes}" onchange="P.skus[${i}].boxes=+this.value;save()"></td><td><button class="b g" onclick="P.skus.splice(${i},1);save()">✕</button></td></tr>`).join("")}
+function addRow(){P.skus.push({sku:"NEW-SKU",name:"",boxes:0,mode:null,n:null,slots:[],zone:null});save()}
+// ----- allocation -----
+function renderAlloc(){const c=P.config;$("defMode").value=c.defaultMode;$("defN").value=c.defaultN;$("rows").value=c.rows.join("");$("perRow").value=c.perRow;
+  const errs=Core.validate(P),bad=new Set(errs.map(e=>e.sku));
+  $("allocT").innerHTML="<tr><th>SKU</th><th class=hidem>品名</th><th>箱</th><th style='width:120px'>方式</th><th style='width:70px'>N</th><th>需</th><th>库位 / 区域</th></tr>"+P.skus.map((s,i)=>{
+   const m=Core.modeOf(P,s);return `<tr class="${bad.has(s.sku)?"err":""}"><td class=sku>${esc(s.sku)}</td><td class=hidem>${esc(s.name)}</td><td>${s.boxes}</td>
+   <td><select onchange="setMode(${i},this.value)"><option value="">默认(${c.defaultMode==="pallet"?"托盘":"区域"})</option><option value=pallet ${s.mode==="pallet"?"selected":""}>按托盘</option><option value=single ${s.mode==="single"?"selected":""}>单一区域</option></select></td>
+   <td>${m==="pallet"?`<input type=number min=1 placeholder="${c.defaultN}" value="${s.n||""}" onchange="P.skus[${i}].n=+this.value||null;save()">`:"—"}</td>
+   <td>${m==="pallet"?Core.slotsNeeded(P,s):"1区"}</td>
+   <td><input value="${esc(m==="single"?(s.zone||""):s.slots.join(" "))}" onchange="setSlots(${i},this.value)">${s.locked?" 🔒":""}</td></tr>`}).join("");
+  if(errs.length)msg("allocMsg","⚠️ "+errs.slice(0,8).map(e=>`${e.sku} ${e.slot||""} ${e.msg}`).join("<br>")+(errs.length>8?`<br>…共 ${errs.length} 个问题`:""),false);
+  else if(P.skus.length)msg("allocMsg",`✓ 校验通过：${P.skus.length} 个 SKU，${P.skus.reduce((a,s)=>a+(s.slots||[]).length,0)} 个托盘库位`,true)}
+function setMode(i,v){P.skus[i].mode=v||null;P.skus[i].locked=false;save()}
+function setSlots(i,v){const s=P.skus[i];if(Core.modeOf(P,s)==="single")s.zone=v.trim().toUpperCase()||null;else s.slots=Core.parseSlots(v);s.locked=true;save()}
+["defMode","defN","rows","perRow"].forEach(id=>$(id).onchange=()=>{const c=P.config;c.defaultMode=$("defMode").value;c.defaultN=Math.max(1,+$("defN").value||30);
+  c.rows=$("rows").value.toUpperCase().replace(/[^A-Z]/g,"").split("");c.perRow=Math.max(1,+$("perRow").value||100);save()});
+function doAuto(keep){try{if(!keep)P.skus.forEach(s=>s.locked=false);const r=Core.autoAssign(P,{keepManual:keep});save();
+  msg("allocMsg",`已分配 ${r.totalSlots} 个托盘库位，每排最多 ${r.rowLength} 个（${P.config.rows.join("、")} 排）`,Core.validate(P).length===0)}catch(x){msg("allocMsg",x.message,false)}}
+function publish(){const e=Core.validate(P);if(e.length&&!confirm(`还有 ${e.length} 个问题，仍要发布吗？`))return;P.published=new Date().toISOString();Core.saveProject(P);
+  msg("allocMsg","已发布 ✓ 扫描页（同一浏览器）立即生效。其他设备请导出 JSON 后导入。",true)}
+// ----- dashboard -----
+function renderDash(){S=Core.loadState(P);const pr=Core.progress(P,S),f=($("flt").value||"").toUpperCase();
+  const tb=pr.reduce((a,r)=>a+r.boxes,0),ts=pr.reduce((a,r)=>a+Math.min(r.scanned,r.boxes||r.scanned),0);
+  $("kSku").textContent=pr.length;$("kBox").textContent=tb;$("kScan").textContent=Object.values(S.counts).reduce((a,b)=>a+b,0);$("kPct").textContent=tb?Math.round(ts/tb*100)+"%":"—";
+  $("progT").innerHTML="<tr><th>SKU</th><th>位置</th><th>已扫/总箱</th><th style='width:30%'>进度</th></tr>"+pr.filter(r=>!f||r.sku.includes(f)).map(r=>{const p=r.boxes?Math.min(100,r.scanned/r.boxes*100):0;
+   return `<tr><td class=sku>${esc(r.sku)}<br><small>${esc(r.name)}</small></td><td><b>${esc(r.where)}</b></td><td>${r.scanned}/${r.boxes}${r.scanned>r.boxes?" ⚠️超":""}</td><td><div class=bar><i style="width:${p}%;${r.scanned>r.boxes?"background:#e67e22":""}"></i></div></td></tr>`}).join("");
+  $("histT").innerHTML="<tr><th>时间</th><th>SKU</th><th>库位</th><th>计数</th></tr>"+S.hist.slice(0,300).map(h=>`<tr><td>${new Date(h.t).toLocaleString()}</td><td class=sku>${esc(h.sku)}</td><td><b>${esc(h.slot)}</b></td><td>${h.scanned}/${h.total||"?"}</td></tr>`).join("")}
+$("flt").oninput=renderDash;
+function resetCounts(){if(confirm("清零所有扫描计数和记录？")){S=Core.newState(P.id);Core.saveState(S);renderDash()}}
+// ----- data -----
+$("jfile").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const b=Core.importBundle(await f.text());P=b.project;Core.saveProject(P);if(b.state){S=b.state;Core.saveState(S)}renderAll();alert("导入成功："+P.skus.length+" 个 SKU")}catch(x){alert(x.message)}e.target.value=""};
+function saveSync(){P.config.syncUrl=$("syncUrl").value.trim();save()}
+function newProj(){if(confirm("清空映射，新建项目？")){P=Core.newProject();S=Core.newState(P.id);Core.saveProject(P);Core.saveState(S);renderAll()}}
+function renderAll(){$("pname").textContent=P.name+(P.published?" · 已发布":" · 未发布");$("projName").value=P.name;$("syncUrl").value=P.config.syncUrl||"";renderMap();renderAlloc();renderDash()}
+renderAll();
+</script></html>

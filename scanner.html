@@ -1,0 +1,105 @@
+<!doctype html><html lang=zh><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
+<title>SKU 分拣测试</title><style>
+body{font-family:-apple-system,"PingFang SC","Noto Sans SC",sans-serif;margin:0;background:#111;color:#eee;text-align:center}
+.btn{display:block;margin:14px 16px;padding:24px 10px;font-size:26px;font-weight:700;border-radius:16px;background:#ffd400;color:#000;border:0;width:calc(100% - 32px)}
+.sm{font-size:17px;padding:12px;background:#333;color:#eee;border:0;border-radius:10px}
+#slot{font-size:34vw;font-weight:800;color:#ffd400;line-height:1;margin:6px 0}#cnt{font-size:40px;font-weight:700;color:#7f7}
+#sku{font-size:22px;word-break:break-all}#info{font-size:14px;color:#aaa;padding:0 12px;word-break:break-all}
+#raw{font-size:13px;color:#ccc;text-align:left;padding:10px;white-space:pre-wrap;word-break:break-all}
+input[type=text]{font-size:20px;padding:12px;width:62%;border-radius:10px;border:0}.hide{display:none}
+table{width:100%;border-collapse:collapse;font-size:14px}td{border-bottom:1px solid #333;padding:5px}td.s{color:#ffd400;font-weight:700;font-size:18px}
+details{margin:10px;text-align:left}
+</style>
+<h2 style="margin:10px 10px 0">SKU 分拣扫描</h2><div id=pinfo style="color:#888;font-size:14px"></div>
+<label class=btn for=f>📷 拍照 / 上传标签</label><input id=f class=hide type=file accept="image/*" capture=environment>
+<div id=status style="font-size:18px;color:#aaa;min-height:24px"></div>
+<div id=res class=hide><div id=slot></div><div id=cnt></div><div id=sku></div><div id=info></div>
+<button class=sm style="margin:10px" onclick=speak()>🔊 再播一次</button></div>
+<div id=nf class=hide><div style="color:#f77;font-size:22px">未识别到 SKU，请手动输入</div></div>
+<div style="margin:12px"><input id=m type=text list=skus placeholder="手动输入 SKU" autocapitalize=characters> <button class=sm onclick=man()>确定</button></div>
+<datalist id=skus></datalist>
+<details><summary>OCR 原文 / 条码</summary><div id=raw></div></details>
+<details><summary>扫描记录</summary><table id=hist></table></details>
+<details><summary>库位计划与进度</summary><table id=plan></table></details>
+<button class=sm style="margin:14px" onclick=rst()>清零所有计数</button><label class=sm style="display:inline-block">导入映射 JSON<input type=file id=jf accept=".json" class=hide></label> <a href="admin.html" style="color:#8cf">管理后台</a>
+<p style="font-size:12px;color:#666">全部在手机本地运行；计数保存在本浏览器。</p>
+<canvas id=cv class=hide></canvas>
+<script src="core.js"></script><script src="plan_seed.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/zxing-wasm@2/dist/iife/reader/index.js"></script>
+<script>
+let P=Core.loadProject(window.SEED_PROJECT?JSON.parse(JSON.stringify(SEED_PROJECT)):null), S=Core.loadState(P), PLAN={};
+const SKU_RE=Core.SKU_RE; const $=id=>document.getElementById(id);
+function reloadProject(){P=Core.loadProject(P);S=Core.loadState(P);PLAN=Object.fromEntries(P.skus.map(x=>[x.sku,x.slots]));$("pinfo").textContent=P.name+" · "+P.skus.length+" 个 SKU";renderPlan();renderHist()}
+window.addEventListener("storage",e=>{if(e.key==="skuProject")reloadProject()});   // admin published in another tab
+let last=null;
+function pickVoice(prefixes){const vs=speechSynthesis.getVoices();for(const p of prefixes){const v=vs.find(v=>v.lang.replace("_","-").startsWith(p));if(v)return v}return null}
+function speak(){if(!last||!window.speechSynthesis)return;speechSynthesis.cancel();const[e,s]=Core.phrases(last);
+  const u1=new SpeechSynthesisUtterance(e);u1.lang="en-US";u1.voice=pickVoice(["en-US","en"]);u1.rate=0.9;
+  const u2=new SpeechSynthesisUtterance(s);u2.lang="es-ES";u2.voice=pickVoice(["es-ES","es-MX","es-US","es"]);u2.rate=0.9;
+  speechSynthesis.speak(u1);speechSynthesis.speak(u2)}
+function show(sku,extra,src){P=Core.loadProject(P);S=Core.loadState(P);const r=Core.scan(P,S,sku,src);Core.saveState(S);last=r.slot;
+  $("nf").classList.add("hide");$("res").classList.remove("hide");$("slot").textContent=r.slot;
+  $("cnt").textContent=(r.mode==="pallet"?`本托 ${r.k}/${r.n}`:"单一区域")+(r.total?` · 共 ${r.scanned}/${r.total} 箱`:` · 第 ${r.scanned} 箱`)+(r.isNew&&r.mode==="pallet"?" · 新托盘":"");
+  $("sku").textContent=sku+(r.name?"  "+r.name:"");
+  $("info").textContent=(r.planned?"计划内":"不在计划中，自动分配")+(r.over?" · ⚠️ 已超出预报箱数":"")+(extra||"");speak();renderHist();renderPlan()}
+function renderHist(){$("hist").innerHTML=S.hist.slice(0,200).map(h=>`<tr><td>${new Date(h.t).toLocaleTimeString()}</td><td>${h.sku}</td><td class=s>${h.slot}</td><td>${h.scanned}/${h.total||"?"}</td></tr>`).join("")}
+function renderPlan(){$("plan").innerHTML=Core.progress(P,S).map(r=>`<tr><td>${r.sku}</td><td class=s>${r.where}</td><td>${r.scanned}/${r.boxes}</td></tr>`).join("");
+  $("skus").innerHTML=P.skus.map(k=>`<option value="${k.sku}">`).join("")}
+// image helpers
+function loadImg(file){return new Promise((ok,err)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=err;i.src=URL.createObjectURL(file)})}
+function toCanvas(img,maxS){const s=Math.min(1,maxS/Math.max(img.naturalWidth||img.width,img.naturalHeight||img.height));
+  const c=document.createElement("canvas");c.width=Math.round((img.naturalWidth||img.width)*s);c.height=Math.round((img.naturalHeight||img.height)*s);
+  c.getContext("2d").drawImage(img,0,0,c.width,c.height);return c}
+function cropLabel(c){ // find bounding box of yellow/orange pixels (HSV h 10-40°*2, sat/val high)
+  const w=c.width,h=c.height,d=c.getContext("2d").getImageData(0,0,w,h).data;let x0=w,y0=h,x1=0,y1=0,cnt=0;
+  for(let y=0;y<h;y+=2)for(let x=0;x<w;x+=2){const i=(y*w+x)*4,r=d[i],g=d[i+1],b=d[i+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b);
+    if(mx<120||mx-mn<mx*0.32)continue;let hh;if(mx===r)hh=60*((g-b)/(mx-mn));else if(mx===g)hh=60*(2+(b-r)/(mx-mn));else continue;if(hh<15||hh>75)continue;
+    cnt++;if(x<x0)x0=x;if(y<y0)y0=y;if(x>x1)x1=x;if(y>y1)y1=y}
+  if(cnt<w*h/4*0.02)return c;const m=20;x0=Math.max(0,x0-m);y0=Math.max(0,y0-m);x1=Math.min(w,x1+m);y1=Math.min(h,y1+m);
+  const o=document.createElement("canvas");o.width=x1-x0;o.height=y1-y0;o.getContext("2d").drawImage(c,x0,y0,o.width,o.height,0,0,o.width,o.height);return o}
+function prep(c){ // grayscale + upscale to ~1800px wide + contrast stretch
+  const s=Math.max(1,1800/c.width),o=document.createElement("canvas");o.width=Math.round(c.width*s);o.height=Math.round(c.height*s);
+  const x=o.getContext("2d");x.imageSmoothingQuality="high";x.drawImage(c,0,0,o.width,o.height);const im=x.getImageData(0,0,o.width,o.height),d=im.data;
+  let mn=255,mx=0;for(let i=0;i<d.length;i+=4){const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];d[i]=g;if(g<mn)mn=g;if(g>mx)mx=g}
+  const k=255/Math.max(1,mx-mn);for(let i=0;i<d.length;i+=4){const g=(d[i]-mn)*k;d[i]=d[i+1]=d[i+2]=g}x.putImageData(im,0,0);return o}
+let worker=null;
+async function getWorker(){if(!worker){worker=await Tesseract.createWorker("eng");await worker.setParameters({tessedit_pageseg_mode:"11"})}return worker}
+function findSku(texts){const cands=texts.map(t=>t.replace(/\s+/g,"").toUpperCase().replace(/[—–_]/g,"-"));
+  const known=Object.keys(PLAN).sort((a,b)=>b.length-a.length);
+  for(const k of known)if(cands.some(c=>c.includes(k)))return k;
+  // OCR often reads 0 as O in the digits part; then fuzzy-match plan SKUs; finally plain regex
+  const norm=cands.map(c=>c.replace(/A[O0Q]([0-9OQ])([0-9OQ])/g,(m,a,b)=>"A0"+a.replace(/[OQ]/,"0")+b.replace(/[OQ]/,"0")));
+  // fuzzy match against plan SKUs (edit distance <=2) on SKU-looking tokens
+  const toks=norm.flatMap(c=>c.match(/A0\d\d-[A-Z0-9-]{2,24}/g)||[]);
+  let best=null,bd=3;for(const t of toks)for(const k of known){if(t.length<k.length-2)continue;const d=Math.min(lev(t.slice(0,k.length),k),lev(t.slice(0,k.length+1),k),lev(t.slice(0,k.length-1),k));if(d<bd){bd=d;best=k}}
+  if(best)return best;
+  for(const c of norm){const m=c.match(SKU_RE);if(m)return m[0]}
+  return null}
+function lev(a,b){const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;
+  for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return d[a.length][b.length]}
+async function analyze(file){
+  const st=$("status");st.textContent="读取图片…";const img=await loadImg(file); // browsers apply EXIF orientation when drawing
+  const full=toCanvas(img,2000);const label=cropLabel(full);let barcodes=[];
+  st.textContent="读条码…";
+  try{for(const c of [label,full]){const r=await ZXingWASM.readBarcodes(c.getContext("2d").getImageData(0,0,c.width,c.height),{tryHarder:true,maxNumberOfSymbols:4});
+      barcodes=r.filter(x=>x.isValid&&x.text).map(x=>x.text);if(barcodes.length)break}}catch(e){console.log("zxing",e)}
+  let sku=findSku(barcodes),texts=[];
+  st.textContent="文字识别中…（首次需下载模型，约10–20秒）";
+  const w=await getWorker();const pc=prep(label);
+  for(const psm of ["11","3"]){ if(sku&&PLAN[sku])break; await w.setParameters({tessedit_pageseg_mode:psm});
+    const {data}=await w.recognize(pc);texts=texts.concat(data.text.split("\n").filter(x=>x.trim()));sku=findSku(barcodes)||findSku(texts)}
+  $("raw").textContent="条码: "+(barcodes.join(", ")||"无")+"\n\nOCR:\n"+texts.join("\n");
+  st.textContent="";return {sku,barcodes,texts}}
+$("f").onchange=async e=>{const file=e.target.files[0];if(!file)return;try{
+  const r=await analyze(file);window.lastResult=r;
+  if(r.sku)show(r.sku,(r.barcodes.length?" · 条码 "+r.barcodes.join(", "):""),"photo");
+  else{$("res").classList.add("hide");$("nf").classList.remove("hide");$("raw").parentElement.open=true}
+ }catch(x){$("status").textContent="出错: "+x}e.target.value=""};
+function man(){const v=$("m").value.trim().toUpperCase();if(!v)return;show(v," · 手动输入","manual");$("m").value=""}
+function rst(){if(confirm("确定清零所有扫描计数？")){S=Core.newState(P.id);Core.saveState(S);renderHist();renderPlan();$("status").textContent="已清零"}}
+$("jf").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const b=Core.importBundle(await f.text());Core.saveProject(b.project);if(b.state)Core.saveState(b.state);reloadProject();alert("已导入映射："+P.skus.length+" 个 SKU")}catch(x){alert(x.message)}e.target.value=""};
+setInterval(()=>Core.sync(P,S).catch(()=>{}),Core.SYNC_MS);
+window.analyzeFile=analyze;reloadProject();speechSynthesis&&speechSynthesis.getVoices();
+</script></html>
