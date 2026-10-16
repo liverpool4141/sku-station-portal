@@ -62,21 +62,39 @@
   }
   const SKU_LIKE = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9_.\/]+(?:-[A-Za-z0-9_.\/]+)+$/;
   const isInt = (x) => /^\d{1,7}$/.test(String(x).trim());
-  /** Guess {sku, qty, name} column indexes (-1 = none) + hasHeader from data rows. */
-  function detectColumns(rows) {
-    const n = Math.max(0, ...rows.map((r) => r.length)); const col = (i) => rows.map((r) => r[i]).filter((x) => x != null && x !== "");
+  /** Guess {sku, qty, name, ord} column indexes (-1 = none) + hasHeader. Stats use only rows with the modal cell count,
+   *  so mis-split header lines (e.g. "SKU | Forecast Qty/预报数量" with 2 cells) cannot confuse detection. */
+  function detectColumns(allRows) {
+    const cnt = {}; allRows.forEach((r) => (cnt[r.length] = (cnt[r.length] || 0) + 1));
+    const modal = +Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a] || b - a)[0] || 0;
+    const rows = allRows.filter((r) => r.length === modal); const n = modal;
+    const col = (i) => rows.map((r) => r[i]).filter((x) => x != null && x !== "");
     const stat = Array.from({ length: n }, (_, i) => { const c = col(i), t = Math.max(1, c.length);
       return { i, sku: c.filter((x) => SKU_LIKE.test(x.replace(/\s/g, ""))).length / t, int: c.filter(isInt).length / t,
         ord: c.filter((x) => /^IB\w+$/i.test(x)).length / t, cjk: c.filter((x) => /[\u4e00-\u9fff]/.test(x)).length / t, n: c.length }; });
-    const by = (f) => stat.filter(f.filter).sort(f.sort)[0];
-    const skuC = stat.filter((s) => s.sku > 0.5).sort((a, b) => b.sku - a.sku || a.i - b.i)[0];
-    const sku = skuC ? skuC.i : -1;
-    const qtyC = stat.filter((s) => s.i !== sku && s.int > 0.5).sort((a, b) => b.int - a.int || b.i - a.i)[0];
-    const qty = qtyC ? qtyC.i : -1;
-    const nameC = stat.filter((s) => s.i !== sku && s.i !== qty && s.ord < 0.5 && s.int < 0.5 && s.sku < 0.5 && s.n > 0).sort((a, b) => b.cjk - a.cjk || b.n - a.n)[0];
+    const skuC = stat.filter((s) => s.sku > 0.5).sort((a, b) => b.sku - a.sku || a.i - b.i)[0]; const sku = skuC ? skuC.i : -1;
+    const qtyC = stat.filter((s) => s.i !== sku && s.int > 0.5).sort((a, b) => b.int - a.int || b.i - a.i)[0]; const qty = qtyC ? qtyC.i : -1;
+    const ordC = stat.filter((s) => s.i !== sku && s.i !== qty && s.ord > 0.5)[0]; const ord = ordC ? ordC.i : -1;
+    const nameC = stat.filter((s) => s.i !== sku && s.i !== qty && s.i !== ord && s.ord < 0.5 && s.int < 0.5 && s.sku < 0.5 && s.n > 0).sort((a, b) => b.cjk - a.cjk || b.n - a.n)[0];
     const name = nameC ? nameC.i : -1;
-    const first = rows[0] || []; const hasHeader = sku >= 0 && first[sku] != null && !SKU_LIKE.test(String(first[sku]).replace(/\s/g, ""));
-    return { sku, qty, name, hasHeader };
+    const first = allRows[0] || []; const hasHeader = sku >= 0 && (first.length !== modal || !SKU_LIKE.test(String(first[sku] ?? "").replace(/\s/g, "")));
+    return { sku, qty, name, ord, hasHeader };
+  }
+  /** Is this row real data under the chosen columns? */
+  const isDataRow = (r, cols) => { const sku = normSku(r[cols.sku]); if (!sku || !SKU_LIKE.test(sku)) return false;
+    return cols.qty < 0 || isInt(String(r[cols.qty] ?? "").replace(/[,\s]/g, "")); };
+  /** Summary for the "brief" card. Duplicate SKUs are merged before totals / top 3. */
+  function brief(rows, cols, skipHeader) {
+    const { list, skipped } = fromColumns(rows, cols, skipHeader);
+    const data = rows.filter((r, i) => !(skipHeader && i === 0) && isDataRow(r, cols));
+    const orders = new Set(cols.ord >= 0 ? data.map((r) => r[cols.ord]).filter(Boolean) : []);
+    return briefOf(list, { rows: rows.length, skipped, orders: cols.ord >= 0 ? orders.size : null });
+  }
+  function briefOf(list, meta) {
+    const total = list.reduce((a, x) => a + x.boxes, 0), top = [...list].sort((a, b) => b.boxes - a.boxes).slice(0, 3);
+    const avg = list.length ? total / list.length : 0, max = top[0] ? top[0].boxes : 0;
+    return { unique: list.length, total, rows: meta.rows ?? null, skipped: meta.skipped ?? null, orders: meta.orders ?? null, top,
+      piecesWarning: list.length > 0 && (avg > 50 || max > 300), avg: Math.round(avg) };
   }
   /** Build [{sku,name,boxes}] from rows + chosen columns; skips non-data rows (no SKU, or qty not integer). Merges duplicates. */
   function fromColumns(rows, cols, skipHeader) {
@@ -259,7 +277,7 @@
   }
   function deviceId() { let d = LS().getItem("skuDevice"); if (!d) { d = "dev-" + Math.random().toString(36).slice(2, 10); LS().setItem("skuDevice", d); } return d; }
 
-  const Core = { alphaName, alphaIdx, styleOf, parseTable, detectColumns, fromColumns, SKU_LIKE, rowsOf, SCHEMA, SYNC_MS, SKU_RE, newProject, newState, parseText, rowsToText, mergeSkus, autoAssign, validate, parseSlots,
+  const Core = { brief, briefOf, isDataRow, alphaName, alphaIdx, styleOf, parseTable, detectColumns, fromColumns, SKU_LIKE, rowsOf, SCHEMA, SYNC_MS, SKU_RE, newProject, newState, parseText, rowsToText, mergeSkus, autoAssign, validate, parseSlots,
     slotsNeeded, modeOf, nOf, scan, progress, rangeText, phrases, loadProject, saveProject, loadDraft, saveDraft, publishDraft, loadState, saveState,
     exportBundle, importBundle, exportProgressCsv, exportHistCsv, sync, normSku, pool };
   if (typeof module !== "undefined") module.exports = Core; else root.Core = Core;
