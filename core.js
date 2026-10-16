@@ -12,7 +12,7 @@
 
   function newProject(name) {
     return { schema: SCHEMA, id: "p" + Date.now().toString(36), name: name || "新柜", updated: new Date().toISOString(),
-      config: { rows: ["A", "B", "C", "D"], perRow: 100, defaultMode: "pallet", defaultN: 30, syncUrl: "" }, skus: [] };
+      config: { rows: ["A", "B", "C", "D"], coordStyle: "letter", perRow: 100, defaultMode: "pallet", defaultN: 30, syncUrl: "" }, skus: [] };
   }
   const newState = (pid) => ({ projectId: pid, counts: {}, extra: {}, hist: [], unsynced: [] });
   const modeOf = (p, s) => s.mode || p.config.defaultMode;
@@ -48,6 +48,49 @@
   /** rows from SheetJS sheet_to_json(header:1) -> text the parser understands */
   const rowsToText = (rows) => rows.map((r) => r.map((x) => (x == null ? "" : String(x))).join("\t")).join("\n");
 
+  // ---------- table parsing + column detection (admin PDF flow) ----------
+  /** text -> array of cell arrays. Splits on tab, CSV comma, or 2+ spaces; drops empty lines. */
+  function parseTable(text) {
+    const rows = [];
+    for (let line of String(text).split(/\r?\n/)) {
+      if (!line.trim()) continue;
+      const cells = line.includes("\t") ? line.split("\t") : line.includes(",") ? splitCsv(line) : line.trim().split(/\s{2,}/);
+      const c = cells.map((x) => x.trim()).filter((x) => x !== "");
+      if (c.length >= 2) rows.push(c);
+    }
+    return rows;
+  }
+  const SKU_LIKE = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9_.\/]+(?:-[A-Za-z0-9_.\/]+)+$/;
+  const isInt = (x) => /^\d{1,7}$/.test(String(x).trim());
+  /** Guess {sku, qty, name} column indexes (-1 = none) + hasHeader from data rows. */
+  function detectColumns(rows) {
+    const n = Math.max(0, ...rows.map((r) => r.length)); const col = (i) => rows.map((r) => r[i]).filter((x) => x != null && x !== "");
+    const stat = Array.from({ length: n }, (_, i) => { const c = col(i), t = Math.max(1, c.length);
+      return { i, sku: c.filter((x) => SKU_LIKE.test(x.replace(/\s/g, ""))).length / t, int: c.filter(isInt).length / t,
+        ord: c.filter((x) => /^IB\w+$/i.test(x)).length / t, cjk: c.filter((x) => /[\u4e00-\u9fff]/.test(x)).length / t, n: c.length }; });
+    const by = (f) => stat.filter(f.filter).sort(f.sort)[0];
+    const skuC = stat.filter((s) => s.sku > 0.5).sort((a, b) => b.sku - a.sku || a.i - b.i)[0];
+    const sku = skuC ? skuC.i : -1;
+    const qtyC = stat.filter((s) => s.i !== sku && s.int > 0.5).sort((a, b) => b.int - a.int || b.i - a.i)[0];
+    const qty = qtyC ? qtyC.i : -1;
+    const nameC = stat.filter((s) => s.i !== sku && s.i !== qty && s.ord < 0.5 && s.int < 0.5 && s.sku < 0.5 && s.n > 0).sort((a, b) => b.cjk - a.cjk || b.n - a.n)[0];
+    const name = nameC ? nameC.i : -1;
+    const first = rows[0] || []; const hasHeader = sku >= 0 && first[sku] != null && !SKU_LIKE.test(String(first[sku]).replace(/\s/g, ""));
+    return { sku, qty, name, hasHeader };
+  }
+  /** Build [{sku,name,boxes}] from rows + chosen columns; skips non-data rows (no SKU, or qty not integer). Merges duplicates. */
+  function fromColumns(rows, cols, skipHeader) {
+    const out = new Map(); let skipped = 0;
+    rows.forEach((r, ri) => {
+      if (skipHeader && ri === 0) return;
+      const sku = normSku(r[cols.sku]); if (!sku || !SKU_LIKE.test(sku)) { skipped++; return; }
+      const q = cols.qty >= 0 ? String(r[cols.qty] ?? "").replace(/[,\s]/g, "") : "0"; if (cols.qty >= 0 && !isInt(q)) { skipped++; return; }
+      const o = out.get(sku) || { sku, name: "", boxes: 0 }; o.boxes += +q || 0;
+      const nm = cols.name >= 0 ? String(r[cols.name] ?? "").trim() : ""; if (nm && !o.name) o.name = nm; out.set(sku, o);
+    });
+    return { list: [...out.values()], skipped };
+  }
+
   function mergeSkus(p, list, replace) {
     if (replace) p.skus = [];
     for (const it of list) {
@@ -59,19 +102,24 @@
   }
 
   // ---------- allocation ----------
-  const pool = (p) => p.config.rows.flatMap((r) => Array.from({ length: p.config.perRow }, (_, i) => r + (i + 1)));
+  const numeric = (p) => p.config.coordStyle === "number";
+  const rowsOf = (p) => (numeric(p) ? [""] : p.config.rows);               // number style = one row with empty prefix: "1","2",...
+  const maxLen = (p) => (numeric(p) ? p.config.perRow * p.config.rows.length : p.config.perRow);
+  const pool = (p) => rowsOf(p).flatMap((r) => Array.from({ length: maxLen(p) }, (_, i) => r + (i + 1)));
+  const slotNum = (x) => +String(x).replace(/^[A-Z]*/, "");
+  const slotRow = (x) => String(x).replace(/\d+$/, "");
   const slotsNeeded = (p, s) => (modeOf(p, s) === "single" ? 0 : Math.max(1, Math.ceil((+s.boxes || 0) / nOf(p, s))));
 
   /** Auto-assign contiguous slots per SKU across rows; SKUs are never split across rows.
    *  keepManual=true keeps SKUs whose slots/zone were set (s.locked) and fills around them. */
   function autoAssign(p, opts = {}) {
-    const rows = p.config.rows, keep = opts.keepManual !== false;
+    const rows = rowsOf(p), keep = opts.keepManual !== false;
     const taken = new Set();
     for (const s of p.skus) if (keep && s.locked) (modeOf(p, s) === "single" ? [] : s.slots).forEach((x) => taken.add(x));
     const pal = p.skus.filter((s) => !(keep && s.locked) && modeOf(p, s) === "pallet").sort((a, b) => a.sku.localeCompare(b.sku));
     const total = pal.reduce((a, s) => a + slotsNeeded(p, s), 0);
     let L = Math.max(1, Math.ceil((total + taken.size) / rows.length), ...pal.map((s) => slotsNeeded(p, s)));
-    L = Math.min(L, p.config.perRow);
+    L = Math.min(L, maxLen(p));
     // free runs per row
     const tryFit = (len) => {
       const plan = new Map(); const used = new Set(taken); let r = 0, pos = 1;
@@ -89,17 +137,17 @@
       return plan;
     };
     let plan = null;
-    for (; L <= p.config.perRow && !(plan = tryFit(L)); L++);
+    for (; L <= maxLen(p) && !(plan = tryFit(L)); L++);
     if (!plan) throw new Error("库位不足：请增加每排库位数 perRow");
     for (const s of pal) s.slots = plan.get(s.sku);
     // single-mode SKUs: zone defaults to first row letter if unset
-    for (const s of p.skus) if (modeOf(p, s) === "single") { s.zone = s.zone || rows[0]; s.slots = []; }
+    for (const s of p.skus) if (modeOf(p, s) === "single") { s.zone = s.zone || (numeric(p) ? "1" : rows[0]); s.slots = []; }
     touch(p); return { rowLength: L, totalSlots: total + taken.size };
   }
 
   /** Returns list of problems: duplicate slots, bad format, missing slots. */
   function validate(p) {
-    const errs = [], seen = new Map(), re = new RegExp("^(" + p.config.rows.join("|") + ")\\d+$");
+    const errs = [], seen = new Map(), re = new RegExp("^(" + rowsOf(p).join("|") + ")\\d+$");
     const skus = new Set();
     for (const s of p.skus) {
       if (skus.has(s.sku)) errs.push({ sku: s.sku, msg: "SKU 重复" }); skus.add(s.sku);
@@ -114,7 +162,7 @@
     return errs;
   }
   const parseSlots = (txt) => String(txt).toUpperCase().split(/[\s,，;；]+/).filter(Boolean).flatMap((t) => {
-    const m = t.match(/^([A-Z])(\d+)[-–~]\1?(\d+)$/); if (!m) return [t];
+    const m = t.match(/^([A-Z]?)(\d+)[-–~]\1?(\d+)$/); if (!m) return [t];
     const a = +m[2], b = +m[3]; return Array.from({ length: Math.abs(b - a) + 1 }, (_, i) => m[1] + (a + i));
   });
 
@@ -149,7 +197,7 @@
       mode: modeOf(p, s), where: modeOf(p, s) === "single" ? s.zone : rangeText(s.slots) }));
   }
   function rangeText(sl) { if (!sl || !sl.length) return ""; if (sl.length === 1) return sl[0];
-    const same = sl.every((x, i) => i === 0 || (x[0] === sl[0][0] && +x.slice(1) === +sl[i - 1].slice(1) + 1));
+    const same = sl.every((x, i) => i === 0 || (slotRow(x) === slotRow(sl[0]) && slotNum(x) === slotNum(sl[i - 1]) + 1));
     return same ? `${sl[0]}–${sl[sl.length - 1]}` : sl.join(" "); }
 
   // ---------- speech text ----------
@@ -161,6 +209,7 @@
   const en = (n) => (n < 20 ? EN[n] : n < 100 ? ENT[Math.floor(n / 10)] + (n % 10 ? "-" + EN[n % 10] : "") : String(n));
   const es = (n) => (n < 30 ? ES[n] : n < 100 ? EST[Math.floor(n / 10)] + (n % 10 ? " y " + ES[n % 10] : "") : String(n));
   function phrases(slot) {
+    if (/^\d+$/.test(String(slot))) return [`Slot ${en(+slot)}`, `Posición ${es(+slot)}`];   // numeric coordinate: "one" / "uno"
     const m = String(slot).match(/^([A-Z])(\d+)?$/); if (!m) return [String(slot), String(slot)];
     if (!m[2]) return [`Zone ${m[1]}`, `Zona ${ESL[m[1]] || m[1]}`];
     return [`Slot ${m[1]} ${en(+m[2])}`, `Posición ${ESL[m[1]] || m[1]} ${es(+m[2])}`];
@@ -169,7 +218,12 @@
   // ---------- storage (localStorage now; API later) ----------
   const LS = () => root.localStorage;
   function touch(p) { p.updated = new Date().toISOString(); }
-  function loadProject(fallback) { try { const j = JSON.parse(LS().getItem(K_PROJECT)); if (j && j.schema) return j; } catch (e) {} return fallback || newProject(); }
+  function loadProject(fallback) { try { const j = JSON.parse(LS().getItem(K_PROJECT)); if (j && j.schema) return j; } catch (e) {} return fallback === undefined ? newProject() : fallback; }
+  const K_DRAFT = "skuDraft";
+  function loadDraft(fallback) { try { const j = JSON.parse(LS().getItem(K_DRAFT)); if (j && j.schema) return j; } catch (e) {} return fallback; }
+  function saveDraft(p) { touch(p); LS().setItem(K_DRAFT, JSON.stringify(p)); }
+  /** Approve: copy the draft to the live project the scanner reads. Nothing is live before this. */
+  function publishDraft(p) { p.published = new Date().toISOString(); LS().setItem(K_PROJECT, JSON.stringify(p)); LS().setItem(K_DRAFT, JSON.stringify(p)); }
   function saveProject(p) { touch(p); LS().setItem(K_PROJECT, JSON.stringify(p)); }
   function loadState(p) { let s; try { s = JSON.parse(LS().getItem(K_STATE)); } catch (e) {}
     if (!s || s.projectId !== p.id) s = Object.assign(newState(p.id), s && s.projectId === p.id ? s : {}); return s; }
@@ -191,8 +245,8 @@
   }
   function deviceId() { let d = LS().getItem("skuDevice"); if (!d) { d = "dev-" + Math.random().toString(36).slice(2, 10); LS().setItem("skuDevice", d); } return d; }
 
-  const Core = { SCHEMA, SYNC_MS, SKU_RE, newProject, newState, parseText, rowsToText, mergeSkus, autoAssign, validate, parseSlots,
-    slotsNeeded, modeOf, nOf, scan, progress, rangeText, phrases, loadProject, saveProject, loadState, saveState,
+  const Core = { parseTable, detectColumns, fromColumns, SKU_LIKE, rowsOf, SCHEMA, SYNC_MS, SKU_RE, newProject, newState, parseText, rowsToText, mergeSkus, autoAssign, validate, parseSlots,
+    slotsNeeded, modeOf, nOf, scan, progress, rangeText, phrases, loadProject, saveProject, loadDraft, saveDraft, publishDraft, loadState, saveState,
     exportBundle, importBundle, exportProgressCsv, exportHistCsv, sync, normSku, pool };
   if (typeof module !== "undefined") module.exports = Core; else root.Core = Core;
 })(typeof window !== "undefined" ? window : globalThis);
