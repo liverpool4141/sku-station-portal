@@ -1,63 +1,104 @@
 <!doctype html><html lang=zh><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
-<title>SKU 管理后台</title><style>
-*{box-sizing:border-box}body{font-family:-apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;margin:0;background:#f4f5f7;color:#222}
-header{background:#111;color:#ffd400;padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}header h1{font-size:20px;margin:0;flex:1}
-header a{color:#fff}nav{display:flex;gap:4px;padding:8px;background:#222;overflow-x:auto}nav button{flex:1;min-width:90px;padding:10px;border:0;border-radius:8px;background:#333;color:#eee;font-size:15px}
-nav button.on{background:#ffd400;color:#000;font-weight:700}section{display:none;padding:12px;max-width:1100px;margin:auto}section.on{display:block}
-.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px #0001}
-textarea{width:100%;min-height:140px;font-family:monospace;font-size:14px;padding:8px}
-button.b{padding:10px 14px;border:0;border-radius:8px;background:#ffd400;font-size:15px;font-weight:700;margin:4px 4px 4px 0}button.g{background:#e3e5e8;font-weight:400}button.r{background:#e74c3c;color:#fff}
-table{width:100%;border-collapse:collapse;font-size:14px}th,td{border-bottom:1px solid #e5e5e5;padding:6px 4px;text-align:left;vertical-align:middle}th{background:#fafafa;position:sticky;top:0}
-td input,td select{width:100%;padding:6px;font-size:14px;border:1px solid #ddd;border-radius:6px}td.sku{font-family:monospace;font-size:13px;word-break:break-all}
-.err{background:#fde8e8}.msg{padding:8px;border-radius:8px;margin:6px 0}.ok{background:#e6f7e9}.bad{background:#fde8e8}
-.bar{height:10px;background:#eee;border-radius:5px;overflow:hidden}.bar i{display:block;height:100%;background:#2ecc71}
-.kpi{display:flex;gap:10px;flex-wrap:wrap}.kpi div{flex:1;min-width:120px;background:#fff;border-radius:12px;padding:12px;text-align:center}.kpi b{display:block;font-size:28px}
-label.in{display:inline-flex;gap:6px;align-items:center;margin:4px 12px 4px 0}label.in input,label.in select{padding:6px;font-size:15px}
-@media(max-width:700px){.hidem{display:none}}
+<title>SKU 管理后台</title>
+<link rel=preconnect href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel=stylesheet>
+<style>
+:root{--pri:#4f46e5;--pri2:#4338ca;--ok:#16a34a;--bad:#dc2626;--warn:#d97706;--bg:#f5f6fa;--card:#fff;--line:#e5e7eb;--txt:#0f172a;--mut:#64748b}
+*{box-sizing:border-box}body{font-family:Inter,"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;margin:0;background:var(--bg);color:var(--txt);font-size:17px;line-height:1.5}
+header{background:#fff;border-bottom:1px solid var(--line);padding:14px 20px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+header h1{font-size:22px;margin:0;flex:1;font-weight:700}header .pn{color:var(--mut);font-size:16px}header a{color:var(--pri);font-weight:600;text-decoration:none;font-size:16px;padding:10px 4px}
+#pubbar{position:sticky;top:0;z-index:5;padding:12px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:16px;border-bottom:1px solid var(--line)}
+nav{display:flex;gap:8px;padding:14px 20px 4px;max-width:1100px;margin:auto;overflow-x:auto}
+nav.steps button{flex:1;min-width:130px;display:flex;align-items:center;gap:10px;justify-content:center;padding:12px 14px;min-height:56px;border:2px solid var(--line);border-radius:14px;background:#fff;color:var(--mut);font-size:17px;font-weight:600;cursor:pointer;font-family:inherit}
+nav.steps button i{font-style:normal;width:30px;height:30px;border-radius:50%;background:#e2e8f0;color:#475569;display:inline-flex;align-items:center;justify-content:center;font-size:15px;flex:none}
+nav.steps button.on{border-color:var(--pri);color:var(--pri);background:#eef2ff}nav.steps button.on i{background:var(--pri);color:#fff}
+nav.tools{padding-top:0;justify-content:flex-end}nav.tools button{background:none;border:0;color:var(--mut);font-size:16px;padding:10px 12px;min-height:44px;cursor:pointer;font-family:inherit;border-radius:10px}nav.tools button.on{color:var(--pri);background:#eef2ff;font-weight:600}
+section{display:none;padding:16px 20px 60px;max-width:1100px;margin:auto}section.on{display:block}
+.card{background:var(--card);border-radius:18px;padding:24px;margin-bottom:18px;border:1px solid var(--line);box-shadow:0 1px 2px #0f172a0a,0 4px 14px #0f172a08}
+h2{font-size:24px;margin:0 0 6px}h3{font-size:19px;margin:0 0 12px}.hint{color:var(--mut);font-size:16px;margin:0 0 16px}
+input,select,textarea{font-family:inherit;font-size:17px;min-height:50px;padding:10px 14px;border:1.5px solid #cbd5e1;border-radius:12px;background:#fff;color:var(--txt);max-width:100%}
+input:focus,select:focus,textarea:focus{outline:3px solid #c7d2fe;border-color:var(--pri)}
+input[type=checkbox]{min-height:0;width:24px;height:24px;accent-color:var(--pri)}
+textarea{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospace;font-size:16px}
+button.b{min-height:52px;padding:12px 22px;border:0;border-radius:12px;background:var(--pri);color:#fff;font-size:17px;font-weight:600;margin:6px 8px 6px 0;cursor:pointer;font-family:inherit}
+button.b:hover{background:var(--pri2)}button.g{background:#eef0f4;color:#1e293b}button.g:hover{background:#e2e5eb}button.r{background:#fee2e2;color:var(--bad)}button.r:hover{background:#fecaca}
+button.ok{background:var(--ok)}button.ok:hover{background:#15803d}button.big{min-height:68px;font-size:22px;padding:16px 36px;border-radius:16px;box-shadow:0 6px 18px #16a34a40}button.sm{min-height:40px;padding:6px 12px;font-size:15px}
+.upload{display:flex;flex-direction:column;align-items:center;gap:8px;border:2px dashed #a5b4fc;background:#f5f7ff;border-radius:18px;padding:34px 16px;text-align:center;cursor:pointer;font-size:19px;font-weight:600;color:var(--pri)}
+.upload small{color:var(--mut);font-weight:400;font-size:15px}
+.field{display:flex;flex-direction:column;gap:6px;margin:0 18px 14px 0;font-weight:500;font-size:16px}.row{display:flex;flex-wrap:wrap;align-items:flex-end}
+.tw{overflow:auto;border:1px solid var(--line);border-radius:14px}
+table{width:100%;border-collapse:collapse;font-size:16px}th,td{border-bottom:1px solid var(--line);padding:14px 12px;text-align:left;vertical-align:middle}
+th{background:#f8fafc;position:sticky;top:0;color:var(--mut);font-weight:600;font-size:15px;z-index:1}tr:last-child td{border-bottom:0}
+td input,td select{width:100%;min-width:110px}td.sku{font-family:ui-monospace,Menlo,monospace;font-size:15px;word-break:break-all}
+.err td{background:#fef2f2}.msg{padding:14px 16px;border-radius:12px;margin:12px 0;font-size:16px}.ok{background:#ecfdf5;color:#065f46}.bad{background:#fef2f2;color:#991b1b}
+.bar{height:12px;background:#e5e7eb;border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ok)}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:18px}.kpi div{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;text-align:center;color:var(--mut)}.kpi b{display:block;font-size:34px;color:var(--txt)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.seg button{min-height:84px;border:2px solid var(--line);background:#fff;border-radius:14px;cursor:pointer;font-family:inherit;color:var(--txt);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;padding:8px}
+.seg button b{font-size:24px}.seg button small{color:var(--mut);font-size:14px}.seg button.on{border-color:var(--pri);background:#eef2ff;box-shadow:0 0 0 3px #c7d2fe}.seg button.on b{color:var(--pri)}
+.advonly{display:none}.adv .advonly{display:table-cell}.adv div.advonly,.adv label.advonly{display:flex}
+details{margin:6px 0}summary{cursor:pointer;font-weight:600;color:var(--pri);padding:12px 0;font-size:17px}
+.pub{text-align:center;padding:10px}.pub .kpi{margin:18px 0}
+@media(max-width:700px){.hidem{display:none}body{font-size:16px}section,nav{padding-left:12px;padding-right:12px}.card{padding:16px}nav.steps button{min-width:110px;font-size:15px;padding:8px}td input,td select{min-width:90px}}
 </style>
-<header><h1>📦 SKU 管理后台</h1><span id=pname></span><a href="scanner.html">→ 扫描页</a></header>
-<div id=pubbar style="position:sticky;top:0;z-index:5;padding:10px 14px;background:#fff3cd;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span id=pubtxt style="flex:1"></span>
- <button class=b style="background:#2ecc71;color:#fff;font-size:18px;padding:12px 20px" onclick=publish()>✅ 同意并发布</button></div>
-<nav><button data-t=import class=on>1 导入</button><button data-t=alloc>2 分配库位</button><button data-t=dash>3 进度看板</button><button data-t=data>4 数据/设置</button></nav>
+<header><h1>📦 SKU 分拣管理</h1><span class=pn id=pname></span><a href="scanner.html">📷 打开扫描页 →</a></header>
+<div id=pubbar><span id=pubtxt style="flex:1"></span><button class="b ok" style="margin:0" onclick="goStep('publish')">去发布 →</button></div>
+<nav class=steps>
+ <button data-t=import class=on><i>1</i>上传清单</button><button data-t=pick><i>2</i>选择列</button><button data-t=alloc><i>3</i>分配库位</button><button data-t=publish><i>4</i>同意并发布</button></nav>
+<nav class=tools><button data-t=dash>📊 进度看板</button><button data-t=data>⚙️ 数据与设置</button></nav>
 
 <section id=import class=on>
- <div class=card><h3>导入柜子 SKU 清单</h3>
-  <p>上传 PDF / Excel / CSV，或粘贴表格。上传后下方会显示预览，<b>点击列头按钮</b>选择哪一列是 SKU、数量、品名（已自动识别，可修改），再点“生成建议映射”。<br>⚠️ 以上操作只生成<b>草稿</b>，点最上方“同意并发布”后扫描页才会生效。</p>
-  <label class=in>柜号/名称 <input id=projName placeholder="如 IB040260813"></label>
-  <textarea id=paste placeholder="粘贴表格：每行 SKU、品名、数量（Tab/逗号/多个空格分隔）"></textarea>
-  <div><button class=b onclick=doPaste()>解析粘贴内容</button>
-   <label class="b g" style="display:inline-block;cursor:pointer">📄 上传 PDF / XLSX / CSV<input type=file id=file accept=".csv,.txt,.xlsx,.xls,.pdf" hidden></label>
-   <label class=in><input type=checkbox id=replace checked> 替换现有清单</label></div>
-  <div id=impMsg></div></div>
- <div class=card id=pick style="display:none"><h3>选择列 <small id=pickInfo></small></h3>
-  <label class=in><input type=checkbox id=hdr onchange=renderPick()> 第一行是表头（跳过）</label>
-  <div style="overflow:auto;max-height:45vh"><table id=pickT></table></div>
-  <button class=b onclick=genMapping()>生成建议映射 →</button><div id=pickMsg></div></div>
- <div class=card><h3>SKU 映射表 <small id=cnt></small></h3>
-  <div style="overflow:auto;max-height:60vh"><table id=mapT></table></div>
-  <button class="b g" onclick=addRow()>+ 新增一行</button></div>
+ <div class=card><h2>第 1 步：上传柜子清单</h2><p class=hint>支持 PDF、Excel、CSV，也可以直接粘贴表格。上传后只会生成“草稿”，不会影响扫描页。</p>
+  <label class=upload for=file>📄 点击选择文件<small>PDF / XLSX / CSV</small></label><input type=file id=file accept=".csv,.txt,.xlsx,.xls,.pdf" hidden>
+  <div id=impMsg></div>
+  <details><summary>或者：粘贴表格文字</summary>
+   <textarea id=paste placeholder="每行：SKU、品名、数量（用 Tab、逗号或多个空格分隔）"></textarea>
+   <button class=b onclick=doPaste()>解析粘贴内容</button></details>
+  <div class=row style="margin-top:10px"><label class=field>柜号 / 名称（可选）<input id=projName placeholder="如 IB040260813" oninput="P.name=this.value;Core.saveDraft(P)"></label>
+   <label class=field style="flex-direction:row;align-items:center;gap:10px;margin-top:22px"><input type=checkbox id=replace checked> 替换现有清单</label></div></div>
+</section>
+
+<section id=pick>
+ <div class=card><h2>第 2 步：确认哪一列是什么</h2><p class=hint>系统已自动识别（黄色高亮）。如不对，点列头下方的按钮重新选择：<b>SKU</b>、<b>数量</b>、<b>品名</b>。</p>
+  <div id=pickEmpty class="msg bad">还没有上传清单，请先回到第 1 步。</div>
+  <div id=pickBody style="display:none"><label class=field style="flex-direction:row;align-items:center;gap:10px"><input type=checkbox id=hdr onchange=renderPick()> 第一行是表头（跳过）</label>
+  <div class=tw style="max-height:50vh"><table id=pickT></table></div><small id=pickInfo class=hint></small>
+  <div id=pickMsg></div><button class="b big" onclick=genMapping()>生成建议库位 →</button></div></div>
 </section>
 
 <section id=alloc>
- <div class=card><h3>全局规则</h3>
-  <label class=in>默认方式 <select id=defMode><option value=pallet>按托盘（每托 N 箱）</option><option value=single>单一区域</option></select></label>
-  <label class=in>每托箱数 N <input id=defN type=number min=1 style="width:80px"></label>
-  <label class=in>坐标样式 <select id=coordStyle><option value=letter>字母+数字 (A1, B23)</option><option value=number>纯数字 (1, 2, 3)</option></select></label>
-  <label class=in>排 <input id=rows style="width:90px"></label>
-  <label class=in>每排最多 <input id=perRow type=number style="width:80px"></label>
-  <div><button class=b onclick=doAuto(true)>自动分配（保留手动修改）</button><button class="b g" onclick=doAuto(false)>全部重新分配</button>
-  <button class=b style="background:#2ecc71;color:#fff" onclick=publish()>✅ 同意并发布</button></div>
+ <div class=card><h2>第 3 步：分配库位</h2><p class=hint>系统已按规则给每个 SKU 建议了库位。可直接在表格里修改，改过的行会被 🔒 锁定。</p>
+  <div class=row>
+   <label class=field>摆放方式<select id=defMode><option value=pallet>按托盘（每托放 N 箱）</option><option value=single>单一区域（整款放一处）</option></select></label>
+   <label class=field>每托箱数 N<input id=defN type=number min=1 style="width:120px"></label>
+   <div class=field style="width:100%"><span>坐标样式（库位怎么命名）</span>
+    <input type=hidden id=coordStyle><div class=seg id=seg>
+     <button type=button data-v=alpha onclick="setStyle('alpha')"><b>A B C …</b><small>纯字母（Z 后是 AA）</small></button>
+     <button type=button data-v=number onclick="setStyle('number')"><b>1 2 3 …</b><small>纯数字</small></button>
+     <button type=button data-v=alphanum onclick="setStyle('alphanum')"><b>A1 B23 …</b><small>字母 + 数字</small></button></div></div>
+   <label class="field advonly" style="display:none">排（字母）<input id=rows style="width:130px"></label>
+   <label class="field advonly" style="display:none">每排最多<input id=perRow type=number style="width:120px"></label></div>
+  <label class=field style="flex-direction:row;align-items:center;gap:10px"><input type=checkbox id=adv onchange=toggleAdv()> 显示高级选项（每个 SKU 单独设置方式 / N，排数）</label>
+  <div><button class=b onclick=doAuto(true)>🔄 自动分配（保留手动修改）</button><button class="b g" onclick=doAuto(false)>全部重新分配</button></div>
   <div id=allocMsg></div></div>
- <div class=card><div style="overflow:auto;max-height:65vh"><table id=allocT></table></div>
-  <p style="font-size:13px;color:#666">库位可直接改：如 <code>A1 A2 A3</code> 或 <code>A1-A3</code>；单一区域填字母如 <code>B</code>。手动改过的行会被锁定 🔒，自动分配不会覆盖。</p></div>
+ <div class=card style="padding:12px"><div class=tw style="max-height:65vh"><table id=allocT></table></div>
+  <p class=hint style="margin:12px 8px 4px">库位格式：<code>A1 A2 A3</code> 或 <code>A1-A3</code>；单一区域填一个字母或数字，如 <code>B</code>。</p></div>
+ <div class=card><details><summary>✏️ 编辑 SKU 清单（品名 / 箱数 / 增删）<small id=cnt style="color:var(--mut);font-weight:400"></small></summary>
+  <div class=tw style="max-height:55vh"><table id=mapT></table></div><button class="b g" onclick=addRow()>+ 新增一行</button></details></div>
+ <div style="text-align:center"><button class="b big" onclick="goStep('publish')">下一步：核对并发布 →</button></div>
+</section>
+
+<section id=publish>
+ <div class="card pub"><h2>第 4 步：核对并同意发布</h2><p class=hint>发布后，扫描页会立即使用这份映射。发布前一切都只是草稿。</p>
+  <div class=kpi><div>SKU 数<b id=pSku>0</b></div><div>总箱数<b id=pBox>0</b></div><div>库位数<b id=pSlots>0</b></div><div>问题<b id=pIssues>0</b></div></div>
+  <div id=pubMsg></div>
+  <button class="b ok big" onclick=publish()>✅ 同意并发布</button></div>
 </section>
 
 <section id=dash>
  <div class=kpi><div>SKU<b id=kSku></b></div><div>总箱数<b id=kBox></b></div><div>已扫<b id=kScan></b></div><div>完成<b id=kPct></b></div></div>
- <div class=card><h3>各 SKU 进度</h3><input id=flt placeholder="搜索 SKU" style="padding:8px;width:100%;margin-bottom:8px">
-  <div style="overflow:auto;max-height:55vh"><table id=progT></table></div>
+ <div class=card><h3>各 SKU 进度</h3><input id=flt placeholder="🔍 搜索 SKU" style="width:100%;margin-bottom:12px">
+  <div class=tw style="max-height:55vh"><table id=progT></table></div>
   <button class="b g" onclick="dl('progress.csv',Core.exportProgressCsv(P,S))">导出进度 CSV</button></div>
- <div class=card><h3>扫描记录 <small>（本设备）</small></h3><div style="overflow:auto;max-height:40vh"><table id=histT></table></div>
+ <div class=card><h3>扫描记录 <small>（本设备）</small></h3><div class=tw style="max-height:40vh"><table id=histT></table></div>
   <button class="b g" onclick="dl('scan_history.csv',Core.exportHistCsv(S))">导出记录 CSV</button>
   <button class="b r" onclick=resetCounts()>清零计数和记录</button></div>
 </section>
@@ -66,10 +107,10 @@ label.in{display:inline-flex;gap:6px;align-items:center;margin:4px 12px 4px 0}la
  <div class=card><h3>导出 / 导入（在其他手机或设备间共享映射）</h3>
   <button class=b onclick="dl('sku-station-'+P.id+'.json',Core.exportBundle(P,S))">导出 JSON（含计数）</button>
   <button class="b g" onclick="dl('sku-project-'+P.id+'.json',Core.exportBundle(P,null))">仅导出映射</button>
-  <label class="b g" style="display:inline-block;cursor:pointer">导入 JSON<input type=file id=jfile accept=".json" hidden></label>
-  <p style="font-size:13px;color:#666">扫描页在同一浏览器中会立即使用发布的映射；其他设备可在扫描页“导入映射”中导入此 JSON。以后接入服务器后，设备每 30 分钟自动同步。</p></div>
- <div class=card><h3>服务器同步（预留）</h3><label class=in>服务器地址 <input id=syncUrl placeholder="https://..." style="width:260px"></label><button class="b g" onclick=saveSync()>保存</button>
-  <p style="font-size:13px;color:#666">接口：GET/PUT /api/project，POST /api/scans。留空则只在本机保存。</p></div>
+  <label class="b g" style="display:inline-flex;align-items:center;cursor:pointer">导入 JSON<input type=file id=jfile accept=".json" hidden></label>
+  <p class=hint>扫描页在同一浏览器中会立即使用发布的映射；其他设备可在扫描页“导入映射”中导入此 JSON。以后接入服务器后，设备每 30 分钟自动同步。</p></div>
+ <div class=card><h3>服务器同步（预留）</h3><label class=field>服务器地址<input id=syncUrl placeholder="https://..." style="width:100%;max-width:420px"></label><button class="b g" onclick=saveSync()>保存</button>
+  <p class=hint>接口：GET/PUT /api/project，POST /api/scans。留空则只在本机保存。</p></div>
  <div class=card><button class="b r" onclick=newProj()>新建空项目（清空映射）</button></div>
 </section>
 
@@ -82,25 +123,27 @@ const SEED=window.SEED_PROJECT?JSON.parse(JSON.stringify(SEED_PROJECT)):null;
 let P=Core.loadDraft(null)||Core.loadProject(SEED), S=Core.loadState(P), RAW=null;
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const save=()=>{Core.saveDraft(P);renderAll()};
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button,section").forEach(x=>x.classList.remove("on"));b.classList.add("on");$(b.dataset.t).classList.add("on");renderAll()});
+function goStep(t){document.querySelectorAll("nav button,section").forEach(x=>x.classList.remove("on"));const b=document.querySelector(`nav button[data-t=${t}]`);b&&b.classList.add("on");$(t).classList.add("on");renderAll();scrollTo(0,0)}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>goStep(b.dataset.t));
+function toggleAdv(){$("alloc").classList.toggle("adv",$("adv").checked);document.querySelectorAll("#alloc .advonly").forEach(e=>e.style.display=$("adv").checked?"":"none");renderAlloc()}
 function msg(el,txt,ok){$(el).innerHTML=`<div class="msg ${ok?"ok":"bad"}">${txt}</div>`}
 function dl(name,txt){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/plain;charset=utf-8"}));a.download=name;a.click()}
 // ----- import -----
 function showRows(rows,src){if(!rows.length){msg("impMsg","没有识别到表格内容",false);return}
   const d=Core.detectColumns(rows);RAW={rows,cols:{sku:d.sku,qty:d.qty,name:d.name},src};$("hdr").checked=d.hasHeader;
-  msg("impMsg",`${src}：读取到 ${rows.length} 行。请检查下方预览并确认列。`,true);$("pick").style.display="block";renderPick();$("pick").scrollIntoView()}
-function renderPick(){if(!RAW)return;const{rows,cols}=RAW,n=Math.max(...rows.map(r=>r.length));const L={sku:"SKU",qty:"数量",name:"品名"};
+  msg("impMsg",`${src}：读取到 ${rows.length} 行。请检查下方预览并确认列。`,true);renderPick();goStep("pick")}
+function renderPick(){if(!RAW)return;const{rows,cols}=RAW,n=Math.max(...rows.map(r=>r.length));const L={sku:"SKU",qty:"数量",name:"品名"};$("pickEmpty").style.display="none";$("pickBody").style.display="block";
   $("pickInfo").textContent=`(${rows.length} 行，显示前 40 行)`;
-  let h="<tr>"+Array.from({length:n},(_,i)=>`<th>列${i+1}<br>`+Object.keys(L).map(k=>`<button class="b ${cols[k]===i?"":"g"}" style="padding:4px 8px;font-size:13px" onclick="pickCol('${k}',${i})">${L[k]}</button>`).join("")+"</th>").join("")+"</tr>";
+  let h="<tr>"+Array.from({length:n},(_,i)=>`<th>列${i+1}<br>`+Object.keys(L).map(k=>`<button class="b sm ${cols[k]===i?"":"g"}" style="margin:2px" onclick="pickCol('${k}',${i})">${L[k]}</button>`).join("")+"</th>").join("")+"</tr>";
   h+=rows.slice(0,40).map((r,ri)=>`<tr style="${ri===0&&$("hdr").checked?"opacity:.45":""}">`+Array.from({length:n},(_,i)=>{const k=Object.keys(L).find(k=>cols[k]===i);
    return `<td style="${k?"background:#fff8d6":""}">${esc(r[i]??"")}</td>`}).join("")+"</tr>").join("");$("pickT").innerHTML=h;
   $("pickMsg").innerHTML=`<p>已选：SKU=${cols.sku>=0?"列"+(cols.sku+1):"<b style=color:#c00>未选</b>"}，数量=${cols.qty>=0?"列"+(cols.qty+1):"未选（按0）"}，品名=${cols.name>=0?"列"+(cols.name+1):"无"}</p>`}
 function pickCol(k,i){RAW.cols[k]=RAW.cols[k]===i?-1:i;renderPick()}
 function genMapping(){if(!RAW||RAW.cols.sku<0){msg("pickMsg","请先选择 SKU 列",false);return}
   const{list,skipped}=Core.fromColumns(RAW.rows,RAW.cols,$("hdr").checked);if(!list.length){msg("pickMsg","没有解析出有效 SKU，请检查所选列",false);return}
-  if($("projName").value)P.name=$("projName").value;Core.mergeSkus(P,list,$("replace").checked);P.skus.forEach(s=>{s.locked=false;if(!$("replace").checked)return});
+  Core.mergeSkus(P,list,$("replace").checked);P.skus.forEach(s=>{s.locked=false;if(!$("replace").checked)return});
   try{Core.autoAssign(P,{keepManual:false})}catch(x){msg("pickMsg",x.message,false)}
-  Core.saveDraft(P);renderAll();document.querySelector('nav button[data-t=alloc]').click();
+  Core.saveDraft(P);renderAll();goStep("alloc");
   msg("allocMsg",`已从${RAW.src}生成建议映射：${list.length} 个 SKU，共 ${list.reduce((a,x)=>a+x.boxes,0)} 箱（跳过 ${skipped} 行非数据）。可修改后点“同意并发布”。`,true)}
 function doPaste(){showRows(Core.parseTable($("paste").value),"粘贴内容")}
 async function pdfRows(buf){pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
@@ -120,12 +163,12 @@ function renderMap(){$("cnt").textContent=`${P.skus.length} 个 SKU · ${P.skus.
    <td><input type=number value="${s.boxes}" onchange="P.skus[${i}].boxes=+this.value;save()"></td><td><button class="b g" onclick="P.skus.splice(${i},1);save()">✕</button></td></tr>`).join("")}
 function addRow(){P.skus.push({sku:"NEW-SKU",name:"",boxes:0,mode:null,n:null,slots:[],zone:null});save()}
 // ----- allocation -----
-function renderAlloc(){const c=P.config;$("defMode").value=c.defaultMode;$("defN").value=c.defaultN;$("rows").value=c.rows.join("");$("coordStyle").value=c.coordStyle||"letter";$("perRow").value=c.perRow;
+function renderAlloc(){const c=P.config;$("defMode").value=c.defaultMode;$("defN").value=c.defaultN;$("rows").value=c.rows.join("");$("coordStyle").value=Core.styleOf(P);document.querySelectorAll("#seg button").forEach(b=>b.classList.toggle("on",b.dataset.v===Core.styleOf(P)));$("perRow").value=c.perRow;
   const errs=Core.validate(P),bad=new Set(errs.map(e=>e.sku));
-  $("allocT").innerHTML="<tr><th>SKU</th><th class=hidem>品名</th><th>箱</th><th style='width:120px'>方式</th><th style='width:70px'>N</th><th>需</th><th>库位 / 区域</th></tr>"+P.skus.map((s,i)=>{
+  $("allocT").innerHTML="<tr><th>SKU</th><th class=hidem>品名</th><th>箱数</th><th class=advonly style='width:150px'>方式</th><th class=advonly style='width:90px'>N</th><th>需要库位</th><th style='min-width:200px'>库位 / 区域（可修改）</th></tr>"+P.skus.map((s,i)=>{
    const m=Core.modeOf(P,s);return `<tr class="${bad.has(s.sku)?"err":""}"><td class=sku>${esc(s.sku)}</td><td class=hidem>${esc(s.name)}</td><td>${s.boxes}</td>
-   <td><select onchange="setMode(${i},this.value)"><option value="">默认(${c.defaultMode==="pallet"?"托盘":"区域"})</option><option value=pallet ${s.mode==="pallet"?"selected":""}>按托盘</option><option value=single ${s.mode==="single"?"selected":""}>单一区域</option></select></td>
-   <td>${m==="pallet"?`<input type=number min=1 placeholder="${c.defaultN}" value="${s.n||""}" onchange="P.skus[${i}].n=+this.value||null;save()">`:"—"}</td>
+   <td class=advonly><select onchange="setMode(${i},this.value)"><option value="">默认(${c.defaultMode==="pallet"?"托盘":"区域"})</option><option value=pallet ${s.mode==="pallet"?"selected":""}>按托盘</option><option value=single ${s.mode==="single"?"selected":""}>单一区域</option></select></td>
+   <td class=advonly>${m==="pallet"?`<input type=number min=1 placeholder="${c.defaultN}" value="${s.n||""}" onchange="P.skus[${i}].n=+this.value||null;save()">`:"—"}</td>
    <td>${m==="pallet"?Core.slotsNeeded(P,s):"1区"}</td>
    <td><input value="${esc(m==="single"?(s.zone||""):s.slots.join(" "))}" onchange="setSlots(${i},this.value)">${s.locked?" 🔒":""}</td></tr>`}).join("");
   if(errs.length)msg("allocMsg","⚠️ "+errs.slice(0,8).map(e=>`${e.sku} ${e.slot||""} ${e.msg}`).join("<br>")+(errs.length>8?`<br>…共 ${errs.length} 个问题`:""),false);
@@ -134,12 +177,14 @@ function setMode(i,v){P.skus[i].mode=v||null;P.skus[i].locked=false;save()}
 function setSlots(i,v){const s=P.skus[i];if(Core.modeOf(P,s)==="single")s.zone=v.trim().toUpperCase()||null;else s.slots=Core.parseSlots(v);s.locked=true;save()}
 ["defMode","defN","rows","perRow","coordStyle"].forEach(id=>$(id).onchange=()=>{const c=P.config;c.defaultMode=$("defMode").value;c.defaultN=Math.max(1,+$("defN").value||30);
   c.rows=$("rows").value.toUpperCase().replace(/[^A-Z]/g,"").split("");c.perRow=Math.max(1,+$("perRow").value||100);c.coordStyle=$("coordStyle").value;save()});
+function setStyle(v){if(Core.styleOf(P)===v)return;P.config.coordStyle=v;P.skus.forEach(s=>{s.locked=false;s.zone=null});
+  try{if(P.skus.length)Core.autoAssign(P,{keepManual:false})}catch(x){msg("allocMsg",x.message,false)}save();if(P.skus.length)msg("allocMsg","已切换坐标样式并重新分配："+({alpha:"纯字母",number:"纯数字",alphanum:"字母+数字"})[v],true)}
 function doAuto(keep){try{if(!keep)P.skus.forEach(s=>s.locked=false);const r=Core.autoAssign(P,{keepManual:keep});save();
   msg("allocMsg",`已分配 ${r.totalSlots} 个托盘库位，每排最多 ${r.rowLength} 个（${P.config.rows.join("、")} 排）`,Core.validate(P).length===0)}catch(x){msg("allocMsg",x.message,false)}}
 function publish(){const e=Core.validate(P);if(!P.skus.length){alert("映射为空");return}
   if(e.length&&!confirm(`还有 ${e.length} 个问题（如重复库位），仍要发布吗？`))return;
   if(!confirm(`确认发布？\n${P.name}：${P.skus.length} 个 SKU 将立即用于扫描页。`))return;
-  Core.publishDraft(P);S=Core.loadState(P);renderAll();msg("allocMsg","已发布 ✓ 扫描页（同一浏览器）立即生效。其他设备请导出 JSON 后导入。",true)}
+  Core.publishDraft(P);S=Core.loadState(P);renderAll();$("pubMsg").innerHTML='<div class="msg ok">已发布 ✓ 扫描页立即生效（同一浏览器）。其他设备请在“数据与设置”导出 JSON 后导入。</div>'}
 // ----- dashboard -----
 function renderDash(){const LP=Core.loadProject(null)||P;S=Core.loadState(LP);const pr=Core.progress(LP,S),f=($("flt").value||"").toUpperCase();
   const tb=pr.reduce((a,r)=>a+r.boxes,0),ts=pr.reduce((a,r)=>a+Math.min(r.scanned,r.boxes||r.scanned),0);
@@ -154,7 +199,10 @@ $("jfile").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const b
 function saveSync(){P.config.syncUrl=$("syncUrl").value.trim();save()}
 function newProj(){if(confirm("清空映射，新建项目？")){P=Core.newProject();Core.saveDraft(P);renderAll()}}
 function renderAll(){const live=Core.loadProject(null),dirty=!live||JSON.stringify(live.skus)!==JSON.stringify(P.skus)||JSON.stringify(live.config)!==JSON.stringify(P.config);
-  $("pname").textContent=P.name;$("pubbar").style.background=dirty?"#fff3cd":"#d4edda";
-  $("pubtxt").textContent=dirty?"⚠️ 草稿尚未发布——扫描页仍在使用"+(live?`旧映射（${live.skus.length} 个 SKU）`:"示例数据")+"，点右侧按钮同意并发布":"✓ 已发布，扫描页正在使用此映射";$("projName").value=P.name;$("syncUrl").value=P.config.syncUrl||"";renderMap();renderAlloc();renderDash()}
+  $("pname").textContent=P.name;$("pubbar").style.background=dirty?"#fef3c7":"#dcfce7";$("pubbar").querySelector("button").style.display=dirty?"":"none";
+  $("pubtxt").textContent=dirty?"⚠️ 草稿尚未发布——扫描页仍在使用"+(live?`旧映射（${live.skus.length} 个 SKU）`:"示例数据")+"，请到第 4 步同意并发布":"✓ 已发布，扫描页正在使用此映射";$("projName").value=P.name;$("syncUrl").value=P.config.syncUrl||"";renderMap();renderAlloc();renderDash();renderPublish()}
+function renderPublish(){const er=Core.validate(P);$("pSku").textContent=P.skus.length;$("pBox").textContent=P.skus.reduce((a,s)=>a+(+s.boxes||0),0);
+  $("pSlots").textContent=P.skus.reduce((a,s)=>a+(s.slots||[]).length,0);$("pIssues").textContent=er.length;$("pIssues").style.color=er.length?"#dc2626":"#16a34a";
+  $("pubMsg").innerHTML=er.length?`<div class="msg bad">有 ${er.length} 个问题：${esc(er.slice(0,4).map(e=>e.sku+" "+e.msg).join("；"))}。请回到第 3 步修改。</div>`:(P.skus.length?'<div class="msg ok">校验通过，可以发布。</div>':'<div class="msg bad">还没有 SKU，请先上传清单。</div>')}
 renderAll();
 </script></html>

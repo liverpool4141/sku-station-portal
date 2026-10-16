@@ -102,12 +102,21 @@
   }
 
   // ---------- allocation ----------
-  const numeric = (p) => p.config.coordStyle === "number";
-  const rowsOf = (p) => (numeric(p) ? [""] : p.config.rows);               // number style = one row with empty prefix: "1","2",...
-  const maxLen = (p) => (numeric(p) ? p.config.perRow * p.config.rows.length : p.config.perRow);
-  const pool = (p) => rowsOf(p).flatMap((r) => Array.from({ length: maxLen(p) }, (_, i) => r + (i + 1)));
-  const slotNum = (x) => +String(x).replace(/^[A-Z]*/, "");
-  const slotRow = (x) => String(x).replace(/\d+$/, "");
+  /* Coordinate styles (config.coordStyle):
+   "alphanum" (default, also legacy "letter"): A1, B23 — rows x perRow;  "alpha": A, B, ... Z, AA, AB ...;  "number": 1, 2, 3 ...
+   alpha/number use one continuous row of rows.length*perRow positions. */
+  const styleOf = (p) => (p.config.coordStyle === "alpha" || p.config.coordStyle === "number" ? p.config.coordStyle : "alphanum");
+  const numeric = (p) => styleOf(p) === "number";
+  const alphaName = (n) => { let r = ""; for (; n > 0; n = Math.floor((n - 1) / 26)) r = String.fromCharCode(65 + ((n - 1) % 26)) + r; return r; };
+  const alphaIdx = (t) => [...t].reduce((a, c) => a * 26 + c.charCodeAt(0) - 64, 0);
+  const rowsOf = (p) => (styleOf(p) === "alphanum" ? p.config.rows : [""]);
+  const maxLen = (p) => (styleOf(p) === "alphanum" ? p.config.perRow : p.config.perRow * p.config.rows.length);
+  const coord = (p, row, pos) => { const st = styleOf(p); return st === "number" ? String(pos) : st === "alpha" ? alphaName(pos) : row + pos; };
+  const pool = (p) => rowsOf(p).flatMap((r) => Array.from({ length: maxLen(p) }, (_, i) => coord(p, r, i + 1)));
+  const slotNum = (x) => (/^[A-Z]+$/.test(x) ? alphaIdx(x) : +String(x).replace(/^[A-Z]*/, ""));
+  const slotRow = (x) => (/^[A-Z]+$/.test(x) ? "" : String(x).replace(/\d+$/, ""));
+  const slotRe = (p) => { const st = styleOf(p); return st === "number" ? /^\d+$/ : st === "alpha" ? /^[A-Z]+$/ : new RegExp("^(" + p.config.rows.join("|") + ")\\d+$"); };
+
   const slotsNeeded = (p, s) => (modeOf(p, s) === "single" ? 0 : Math.max(1, Math.ceil((+s.boxes || 0) / nOf(p, s))));
 
   /** Auto-assign contiguous slots per SKU across rows; SKUs are never split across rows.
@@ -128,7 +137,7 @@
         for (;;) {
           if (r >= rows.length) return null;
           if (pos + need - 1 > len) { r++; pos = 1; continue; }
-          const run = Array.from({ length: need }, (_, i) => rows[r] + (pos + i));
+          const run = Array.from({ length: need }, (_, i) => coord(p, rows[r], pos + i));
           const clash = run.findIndex((x) => used.has(x));
           if (clash >= 0) { pos += clash + 1; continue; }
           run.forEach((x) => used.add(x)); plan.set(s.sku, run); pos += need; break;
@@ -141,13 +150,13 @@
     if (!plan) throw new Error("库位不足：请增加每排库位数 perRow");
     for (const s of pal) s.slots = plan.get(s.sku);
     // single-mode SKUs: zone defaults to first row letter if unset
-    for (const s of p.skus) if (modeOf(p, s) === "single") { s.zone = s.zone || (numeric(p) ? "1" : rows[0]); s.slots = []; }
+    for (const s of p.skus) if (modeOf(p, s) === "single") { s.zone = s.zone || (numeric(p) ? "1" : styleOf(p) === "alpha" ? "A" : rows[0]); s.slots = []; }
     touch(p); return { rowLength: L, totalSlots: total + taken.size };
   }
 
   /** Returns list of problems: duplicate slots, bad format, missing slots. */
   function validate(p) {
-    const errs = [], seen = new Map(), re = new RegExp("^(" + rowsOf(p).join("|") + ")\\d+$");
+    const errs = [], seen = new Map(), re = slotRe(p);
     const skus = new Set();
     for (const s of p.skus) {
       if (skus.has(s.sku)) errs.push({ sku: s.sku, msg: "SKU 重复" }); skus.add(s.sku);
@@ -162,6 +171,8 @@
     return errs;
   }
   const parseSlots = (txt) => String(txt).toUpperCase().split(/[\s,，;；]+/).filter(Boolean).flatMap((t) => {
+    const al = t.match(/^([A-Z]+)[-–~]([A-Z]+)$/);
+    if (al) { const a = alphaIdx(al[1]), b = alphaIdx(al[2]); return Array.from({ length: Math.abs(b - a) + 1 }, (_, i) => alphaName(Math.min(a, b) + i)); }
     const m = t.match(/^([A-Z]?)(\d+)[-–~]\1?(\d+)$/); if (!m) return [t];
     const a = +m[2], b = +m[3]; return Array.from({ length: Math.abs(b - a) + 1 }, (_, i) => m[1] + (a + i));
   });
@@ -205,14 +216,17 @@
   const ENT = { 2: "twenty", 3: "thirty", 4: "forty", 5: "fifty", 6: "sixty", 7: "seventy", 8: "eighty", 9: "ninety" };
   const ES = "cero uno dos tres cuatro cinco seis siete ocho nueve diez once doce trece catorce quince dieciséis diecisiete dieciocho diecinueve veinte veintiuno veintidós veintitrés veinticuatro veinticinco veintiséis veintisiete veintiocho veintinueve".split(" ");
   const EST = { 3: "treinta", 4: "cuarenta", 5: "cincuenta", 6: "sesenta", 7: "setenta", 8: "ochenta", 9: "noventa" };
-  const ESL = { A: "a", B: "be", C: "ce", D: "de", E: "e", F: "efe", G: "ge", H: "hache" };
+  const ESL = { A: "a", B: "be", C: "ce", D: "de", E: "e", F: "efe", G: "ge", H: "hache", I: "i", J: "jota", K: "ka", L: "ele", M: "eme", N: "ene", O: "o", P: "pe", Q: "cu", R: "erre", S: "ese", T: "te", U: "u", V: "uve", W: "uve doble", X: "equis", Y: "i griega", Z: "zeta" };
   const en = (n) => (n < 20 ? EN[n] : n < 100 ? ENT[Math.floor(n / 10)] + (n % 10 ? "-" + EN[n % 10] : "") : String(n));
   const es = (n) => (n < 30 ? ES[n] : n < 100 ? EST[Math.floor(n / 10)] + (n % 10 ? " y " + ES[n % 10] : "") : String(n));
-  function phrases(slot) {
-    if (/^\d+$/.test(String(slot))) return [`Slot ${en(+slot)}`, `Posición ${es(+slot)}`];   // numeric coordinate: "one" / "uno"
-    const m = String(slot).match(/^([A-Z])(\d+)?$/); if (!m) return [String(slot), String(slot)];
-    if (!m[2]) return [`Zone ${m[1]}`, `Zona ${ESL[m[1]] || m[1]}`];
-    return [`Slot ${m[1]} ${en(+m[2])}`, `Posición ${ESL[m[1]] || m[1]} ${es(+m[2])}`];
+  /** Announcement text [EN, ES]. kind="zone" -> "Zone ..."/"Zona ...", otherwise "Slot ..."/"Posición ...".
+   Letters are spelled one by one ("AA" -> "A A"), numbers as words ("one"/"uno"), A12 -> "A twelve". */
+  function phrases(slot, kind) {
+    slot = String(slot); const zone = kind === "zone", e0 = zone ? "Zone" : "Slot", s0 = zone ? "Zona" : "Posición";
+    if (/^\d+$/.test(slot)) return [`${e0} ${en(+slot)}`, `${s0} ${es(+slot)}`];
+    const m = slot.match(/^([A-Z]+)(\d+)?$/); if (!m) return [slot, slot];
+    const L = [...m[1]]; const enL = L.join(" "), esL = L.map((c) => ESL[c] || c).join(" ");
+    return m[2] ? [`${e0} ${enL} ${en(+m[2])}`, `${s0} ${esL} ${es(+m[2])}`] : [`${e0} ${enL}`, `${s0} ${esL}`];
   }
 
   // ---------- storage (localStorage now; API later) ----------
@@ -245,7 +259,7 @@
   }
   function deviceId() { let d = LS().getItem("skuDevice"); if (!d) { d = "dev-" + Math.random().toString(36).slice(2, 10); LS().setItem("skuDevice", d); } return d; }
 
-  const Core = { parseTable, detectColumns, fromColumns, SKU_LIKE, rowsOf, SCHEMA, SYNC_MS, SKU_RE, newProject, newState, parseText, rowsToText, mergeSkus, autoAssign, validate, parseSlots,
+  const Core = { alphaName, alphaIdx, styleOf, parseTable, detectColumns, fromColumns, SKU_LIKE, rowsOf, SCHEMA, SYNC_MS, SKU_RE, newProject, newState, parseText, rowsToText, mergeSkus, autoAssign, validate, parseSlots,
     slotsNeeded, modeOf, nOf, scan, progress, rangeText, phrases, loadProject, saveProject, loadDraft, saveDraft, publishDraft, loadState, saveState,
     exportBundle, importBundle, exportProgressCsv, exportHistCsv, sync, normSku, pool };
   if (typeof module !== "undefined") module.exports = Core; else root.Core = Core;
