@@ -275,10 +275,40 @@
     if (np && np.updated > p.updated) saveProject(np);
     return { ok: r.ok, projectUpdated: !!(np && np.updated > p.updated) };
   }
+
+  // ---------- push to devices (ntfy.sh pub/sub; no server of our own) ----------
+  const PUSH_CHUNK = 3000; // ntfy.sh message body limit is 4096 bytes; stay well below
+  function pushPayload(p, version) {
+    return { kind: "sku-plan", v: 1, version: version || ("v" + new Date().toISOString().replace(/[-:T]/g, "").slice(2, 14)),
+      ts: new Date().toISOString(), project: p.name, projectId: p.id, style: styleOf(p), capacity: +p.config.defaultN || 30, defaultMode: p.config.defaultMode || "pallet",
+      skus: p.skus.map((s) => ({ sku: s.sku, name: s.name || "", boxes: +s.boxes || 0, mode: modeOf(p, s), n: nOf(p, s), slots: modeOf(p, s) === "single" ? [s.zone || ""] : (s.slots || []) })) };
+  }
+  const b64 = (u8) => { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return (root.btoa ? root.btoa(s) : Buffer.from(s, "binary").toString("base64")); };
+  async function gzip(u8) {
+    if (typeof CompressionStream === "undefined") return null;
+    const cs = new Response(new Blob([u8]).stream().pipeThrough(new CompressionStream("gzip")));
+    return new Uint8Array(await cs.arrayBuffer());
+  }
+  /** -> array of text messages "SKUP1|version|i|n|enc|data" (enc g=gzip+b64, r=raw utf8 b64) */
+  async function encodePush(payload) {
+    const raw = new TextEncoder().encode(JSON.stringify(payload)); const gz = await gzip(raw).catch(() => null);
+    const enc = gz ? "g" : "r", data = b64(gz || raw), n = Math.max(1, Math.ceil(data.length / PUSH_CHUNK)), out = [];
+    for (let i = 0; i < n; i++) out.push(["SKUP1", payload.version, i + 1, n, enc, data.slice(i * PUSH_CHUNK, (i + 1) * PUSH_CHUNK)].join("|"));
+    return out;
+  }
+  const pushServer = (p) => String((p.config.push && p.config.push.server) || "https://ntfy.sh").replace(/\/+$/, "");
+  async function pushToDevices(p, fetchFn) {
+    const topic = p.config.push && p.config.push.topic; if (!topic || !/^[A-Za-z0-9_-]{12,64}$/.test(topic)) throw new Error("请先设置设备推送频道（至少 12 位字母数字）");
+    const payload = pushPayload(p), msgs = await encodePush(payload), f = fetchFn || root.fetch.bind(root);
+    for (const m of msgs) { const r = await f(pushServer(p) + "/" + topic, { method: "POST", body: m, headers: { "Title": "sku-plan " + payload.version } });
+      if (!r.ok) throw new Error("推送失败 HTTP " + r.status); }
+    return { version: payload.version, parts: msgs.length, bytes: msgs.reduce((a, m) => a + m.length, 0), skus: payload.skus.length };
+  }
+  const randomTopic = () => { const a = "abcdefghijkmnpqrstuvwxyz23456789"; let t = "skus-"; const r = new Uint8Array(24); (root.crypto || require("crypto").webcrypto).getRandomValues(r); r.forEach((x) => (t += a[x % a.length])); return t; };
   function deviceId() { let d = LS().getItem("skuDevice"); if (!d) { d = "dev-" + Math.random().toString(36).slice(2, 10); LS().setItem("skuDevice", d); } return d; }
 
   const Core = { brief, briefOf, isDataRow, alphaName, alphaIdx, styleOf, parseTable, detectColumns, fromColumns, SKU_LIKE, rowsOf, SCHEMA, SYNC_MS, SKU_RE, newProject, newState, parseText, rowsToText, mergeSkus, autoAssign, validate, parseSlots,
     slotsNeeded, modeOf, nOf, scan, progress, rangeText, phrases, loadProject, saveProject, loadDraft, saveDraft, publishDraft, loadState, saveState,
-    exportBundle, importBundle, exportProgressCsv, exportHistCsv, sync, normSku, pool };
+    exportBundle, importBundle, exportProgressCsv, exportHistCsv, sync, normSku, pool, pushPayload, encodePush, pushToDevices, pushServer, randomTopic, PUSH_CHUNK };
   if (typeof module !== "undefined") module.exports = Core; else root.Core = Core;
 })(typeof window !== "undefined" ? window : globalThis);

@@ -97,6 +97,11 @@ details{margin:6px 0}summary{cursor:pointer;font-weight:600;color:var(--pri);pad
   <div class=kpi><div>SKU 数<b id=pSku>0</b></div><div>总箱数<b id=pBox>0</b></div><div>库位数<b id=pSlots>0</b></div><div>问题<b id=pIssues>0</b></div></div>
   <div id=pubMsg></div>
   <button class="b ok big" onclick=publish()>✅ 同意并发布</button></div>
+ <div class="card pub" id=pushCard><h2>📡 推送到设备（树莓派）</h2><p class=hint>把<b>已发布</b>的库位映射一键发到仓库里的树莓派，几秒内生效，屏幕和喇叭会提示“新库位已更新”。</p>
+  <div class=kpi><div>推送频道<b id=pushTopicShow style="font-size:16px;word-break:break-all">未设置</b></div><div>上次推送<b id=pushVer style="font-size:22px">—</b></div><div>设备确认<b id=pushAck style="font-size:22px">—</b></div></div>
+  <div id=pushMsg></div>
+  <button class="b big" id=pushBtn onclick=doPush() style="background:#2563eb;box-shadow:0 6px 18px #2563eb40">📡 推送到设备</button>
+  <p class=hint style="margin-top:12px">频道在“数据与设置”里设置，必须和树莓派 config.yaml 里的 push.topic 一致。</p></div>
 </section>
 
 <section id=dash>
@@ -115,6 +120,10 @@ details{margin:6px 0}summary{cursor:pointer;font-weight:600;color:var(--pri);pad
   <button class="b g" onclick="dl('sku-project-'+P.id+'.json',Core.exportBundle(P,null))">仅导出映射</button>
   <label class="b g" style="display:inline-flex;align-items:center;cursor:pointer">导入 JSON<input type=file id=jfile accept=".json" hidden></label>
   <p class=hint>扫描页在同一浏览器中会立即使用发布的映射；其他设备可在扫描页“导入映射”中导入此 JSON。以后接入服务器后，设备每 30 分钟自动同步。</p></div>
+ <div class=card><h3>📡 设备推送频道</h3><p class=hint>树莓派通过这个频道接收推送。频道名就是密码，请勿外传。</p>
+  <label class=field>频道（topic）<input id=pushTopic placeholder="skus-xxxxxxxxxxxxxxxxxxxxxxxx" style="width:100%;max-width:460px"></label>
+  <label class=field>服务器<input id=pushServer placeholder="https://ntfy.sh" style="width:100%;max-width:460px"></label>
+  <button class=b onclick=savePush()>保存</button><button class="b g" onclick="if(!$('pushTopic').value||confirm('生成新频道后，树莓派也要改成新频道，继续？')){$('pushTopic').value=Core.randomTopic();savePush()}">生成新频道</button></div>
  <div class=card><h3>服务器同步（预留）</h3><label class=field>服务器地址<input id=syncUrl placeholder="https://..." style="width:100%;max-width:420px"></label><button class="b g" onclick=saveSync()>保存</button>
   <p class=hint>接口：GET/PUT /api/project，POST /api/scans。留空则只在本机保存。</p></div>
  <div class=card><button class="b r" onclick=newProj()>新建空项目（清空映射）</button></div>
@@ -196,7 +205,7 @@ function doAuto(keep){try{if(!keep)P.skus.forEach(s=>s.locked=false);const r=Cor
 function publish(){const e=Core.validate(P);if(!P.skus.length){alert("映射为空");return}
   if(e.length&&!confirm(`还有 ${e.length} 个问题（如重复库位），仍要发布吗？`))return;
   if(!confirm(`确认发布？\n${P.name}：${P.skus.length} 个 SKU 将立即用于扫描页。`))return;
-  Core.publishDraft(P);S=Core.loadState(P);renderAll();$("pubMsg").innerHTML='<div class="msg ok">已发布 ✓ 扫描页立即生效（同一浏览器）。其他设备请在“数据与设置”导出 JSON 后导入。</div>'}
+  Core.publishDraft(P);S=Core.loadState(P);renderAll();$("pubMsg").innerHTML='<div class="msg ok">已发布 ✓ 扫描页立即生效（同一浏览器）。现在可点下方“📡 推送到设备”发给树莓派。</div>';renderPush&&renderPush()}
 // ----- dashboard -----
 function renderDash(){const LP=Core.loadProject(null)||P;S=Core.loadState(LP);const pr=Core.progress(LP,S),f=($("flt").value||"").toUpperCase();
   const tb=pr.reduce((a,r)=>a+r.boxes,0),ts=pr.reduce((a,r)=>a+Math.min(r.scanned,r.boxes||r.scanned),0);
@@ -218,4 +227,31 @@ function renderPublish(){const er=Core.validate(P);$("pSku").textContent=P.skus.
   $("pSlots").textContent=P.skus.reduce((a,s)=>a+(s.slots||[]).length,0);$("pIssues").textContent=er.length;$("pIssues").style.color=er.length?"#dc2626":"#16a34a";
   $("pubMsg").innerHTML=er.length?`<div class="msg bad">有 ${er.length} 个问题：${esc(er.slice(0,4).map(e=>e.sku+" "+e.msg).join("；"))}。请回到第 3 步修改。</div>`:(P.skus.length?'<div class="msg ok">校验通过，可以发布。</div>':'<div class="msg bad">还没有 SKU，请先上传清单。</div>')}
 renderAll();
+// ----- push to devices -----
+const PK="skuPush";function pushCfg(){try{return JSON.parse(localStorage.getItem(PK))||{}}catch(e){return{}}}
+function setPushCfg(c){localStorage.setItem(PK,JSON.stringify(c))}
+(function(){const m=location.hash.match(/[#&]t=([A-Za-z0-9_-]{12,64})/);if(m){const c=pushCfg();c.topic=m[1];setPushCfg(c)}})();
+function savePush(){const c=pushCfg(),t=$("pushTopic").value.trim();if(t&&!/^[A-Za-z0-9_-]{12,64}$/.test(t)){alert("频道只能是 12-64 位字母、数字、-、_");return}
+  c.topic=t;c.server=$("pushServer").value.trim()||"https://ntfy.sh";setPushCfg(c);listenAck();renderPush();alert("已保存")}
+let ackES=null,ackTopic=null;
+function listenAck(){const c=pushCfg();if(!c.topic||!window.EventSource){return}if(ackES&&ackTopic===c.topic)return;if(ackES)ackES.close();ackTopic=c.topic;
+  ackES=new EventSource((c.server||"https://ntfy.sh").replace(/\/+$/,"")+"/"+c.topic+"-ack/sse?since=12h");
+  ackES.onmessage=e=>{try{const m=JSON.parse(e.data);if(m.event&&m.event!=="message")return;const a=JSON.parse(m.message);const cc=pushCfg();cc.acks=cc.acks||{};
+    cc.acks[a.host||"pi"]={version:a.version,t:a.t||new Date(m.time*1000).toISOString(),ok:a.ok!==false,skus:a.skus,err:a.err};setPushCfg(cc);renderPush()}catch(x){}}}
+function renderPush(){const c=pushCfg();if(!$("pushTopic"))return;$("pushTopic").value=c.topic||"";$("pushServer").value=c.server||"https://ntfy.sh";
+  $("pushTopicShow").textContent=c.topic?c.topic.slice(0,10)+"…":"未设置";$("pushVer").textContent=c.last?c.last.version:"—";
+  const acks=Object.entries(c.acks||{}).filter(([h,a])=>c.last&&a.version===c.last.version);
+  $("pushAck").innerHTML=!c.last?"—":acks.length?acks.map(([h,a])=>`<span style="color:${a.ok?"#16a34a":"#dc2626"}">${a.ok?"✓":"✗"} ${esc(h)}</span>`).join("<br>"):'<span style="color:#d97706">等待中…</span>';
+  if(c.last&&acks.length){const bad=acks.filter(([h,a])=>!a.ok);$("pushMsg").innerHTML=bad.length?`<div class="msg bad">设备报错：${esc(bad.map(([h,a])=>h+" "+(a.err||"")).join("；"))}</div>`:`<div class="msg ok">✅ ${esc(acks.map(([h])=>h).join("、"))} 已收到 ${esc(c.last.version)}（${esc(c.last.project||"")}，${c.last.skus} 个 SKU），已生效。</div>`}}
+async function doPush(){const live=Core.loadProject(null),c=pushCfg();if(!live||!live.skus.length){alert("请先“同意并发布”，再推送");return}
+  if(!c.topic){alert("请先到“数据与设置”设置设备推送频道");goStep("data");return}
+  const dirty=JSON.stringify(live.skus)!==JSON.stringify(P.skus);if(dirty&&!confirm("草稿还有未发布的修改。将推送的是上次已发布的版本，继续？"))return;
+  const btn=$("pushBtn");btn.disabled=true;btn.textContent="推送中…";listenAck();
+  try{const q=JSON.parse(JSON.stringify(live));q.config.push={topic:c.topic,server:c.server};const r=await Core.pushToDevices(q);
+    c.last={version:r.version,t:new Date().toISOString(),project:live.name,skus:r.skus};setPushCfg(c);
+    $("pushMsg").innerHTML=`<div class="msg ok">已推送 ${esc(r.version)}：${esc(live.name)}，${r.skus} 个 SKU（${r.parts} 段）。等待树莓派确认…</div>`;renderPush();
+    setTimeout(()=>{const cc=pushCfg();if(cc.last&&cc.last.version===r.version&&!Object.values(cc.acks||{}).some(a=>a.version===r.version))$("pushMsg").innerHTML='<div class="msg bad">已发出，但 20 秒内没有设备确认。请检查树莓派是否开机联网、频道是否一致。设备开机后会自动取到这次推送（12 小时内）。</div>'},20000)}
+  catch(x){$("pushMsg").innerHTML=`<div class="msg bad">❌ ${esc(x.message)}（请检查网络）</div>`}
+  finally{btn.disabled=false;btn.textContent="📡 推送到设备"}}
+listenAck();renderPush();
 </script></html>
