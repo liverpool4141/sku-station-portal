@@ -11,7 +11,7 @@
   const SKU_RE = /A\d{3}-[A-Z0-9]{4,}(?:-(?:[A-Z]|\d{1,2}))?/;
 
   function newProject(name) {
-    return { schema: SCHEMA, id: "p" + Date.now().toString(36), name: name || "新柜", updated: new Date().toISOString(),
+    return { schema: SCHEMA, id: "p" + Date.now().toString(36), name: name || "新柜 / Nuevo contenedor", updated: new Date().toISOString(),
       config: { rows: ["A", "B", "C", "D"], coordStyle: "letter", perRow: 100, defaultMode: "pallet", defaultN: 30, syncUrl: "" }, skus: [] };
   }
   const newState = (pid) => ({ projectId: pid, counts: {}, extra: {}, hist: [], unsynced: [] });
@@ -165,7 +165,7 @@
     };
     let plan = null;
     for (; L <= maxLen(p) && !(plan = tryFit(L)); L++);
-    if (!plan) throw new Error("库位不足：请增加每排库位数 perRow");
+    if (!plan) throw new Error("库位不足：请增加每排库位数 perRow / Ubicaciones insuficientes: aumente perRow");
     for (const s of pal) s.slots = plan.get(s.sku);
     // single-mode SKUs: zone defaults to first row letter if unset
     for (const s of p.skus) if (modeOf(p, s) === "single") { s.zone = s.zone || (numeric(p) ? "1" : styleOf(p) === "alpha" ? "A" : rows[0]); s.slots = []; }
@@ -177,13 +177,13 @@
     const errs = [], seen = new Map(), re = slotRe(p);
     const skus = new Set();
     for (const s of p.skus) {
-      if (skus.has(s.sku)) errs.push({ sku: s.sku, msg: "SKU 重复" }); skus.add(s.sku);
-      if (modeOf(p, s) === "single") { if (!s.zone) errs.push({ sku: s.sku, msg: "未设置区域" }); continue; }
-      if (!s.slots || !s.slots.length) errs.push({ sku: s.sku, msg: "未分配库位" });
-      else if (s.slots.length < slotsNeeded(p, s)) errs.push({ sku: s.sku, msg: `库位不足：需要 ${slotsNeeded(p, s)} 个，已有 ${s.slots.length}` });
+      if (skus.has(s.sku)) errs.push({ sku: s.sku, msg: "SKU 重复 / SKU duplicado" }); skus.add(s.sku);
+      if (modeOf(p, s) === "single") { if (!s.zone) errs.push({ sku: s.sku, msg: "未设置区域 / Zona no definida" }); continue; }
+      if (!s.slots || !s.slots.length) errs.push({ sku: s.sku, msg: "未分配库位 / Sin ubicación asignada" });
+      else if (s.slots.length < slotsNeeded(p, s)) errs.push({ sku: s.sku, msg: `库位不足：需要 ${slotsNeeded(p, s)} 个，已有 ${s.slots.length} / Ubicaciones insuficientes: se necesitan ${slotsNeeded(p, s)}, hay ${s.slots.length}` });
       for (const x of s.slots || []) {
-        if (!re.test(x)) errs.push({ sku: s.sku, slot: x, msg: "库位格式错误" });
-        if (seen.has(x)) errs.push({ sku: s.sku, slot: x, msg: `库位与 ${seen.get(x)} 重复` }); else seen.set(x, s.sku);
+        if (!re.test(x)) errs.push({ sku: s.sku, slot: x, msg: "库位格式错误 / Formato de ubicación incorrecto" });
+        if (seen.has(x)) errs.push({ sku: s.sku, slot: x, msg: `库位与 ${seen.get(x)} 重复 / Ubicación repetida con ${seen.get(x)}` }); else seen.set(x, s.sku);
       }
     }
     return errs;
@@ -261,7 +261,7 @@
     if (!s || s.projectId !== p.id) s = Object.assign(newState(p.id), s && s.projectId === p.id ? s : {}); return s; }
   function saveState(s) { LS().setItem(K_STATE, JSON.stringify(s)); }
   const exportBundle = (p, s) => JSON.stringify({ kind: "sku-station-bundle", schema: SCHEMA, project: p, state: s || null }, null, 1);
-  function importBundle(txt) { const j = JSON.parse(txt); if (j.kind === "sku-station-bundle") return j; if (j.schema && j.skus) return { project: j, state: null }; throw new Error("不是有效的导出文件"); }
+  function importBundle(txt) { const j = JSON.parse(txt); if (j.kind === "sku-station-bundle") return j; if (j.schema && j.skus) return { project: j, state: null }; throw new Error("不是有效的导出文件 / No es un archivo de exportación válido"); }
   function csvEscape(v) { v = v == null ? "" : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
   const toCsv = (rows) => "\ufeff" + rows.map((r) => r.map(csvEscape).join(",")).join("\n");
   function exportProgressCsv(p, s) { return toCsv([["sku", "name", "boxes", "scanned", "mode", "location"], ...progress(p, s).map((r) => [r.sku, r.name, r.boxes, r.scanned, r.mode, r.where])]); }
@@ -298,10 +298,10 @@
   }
   const pushServer = (p) => String((p.config.push && p.config.push.server) || "https://ntfy.sh").replace(/\/+$/, "");
   async function pushToDevices(p, fetchFn) {
-    const topic = p.config.push && p.config.push.topic; if (!topic || !/^[A-Za-z0-9_-]{12,64}$/.test(topic)) throw new Error("请先设置设备推送频道（至少 12 位字母数字）");
+    const topic = p.config.push && p.config.push.topic; if (!topic || !/^[A-Za-z0-9_-]{12,64}$/.test(topic)) throw new Error("请先设置设备推送频道（至少 12 位字母数字）/ Configure primero el canal del dispositivo (mínimo 12 letras o números)");
     const payload = pushPayload(p), msgs = await encodePush(payload), f = fetchFn || root.fetch.bind(root);
     for (const m of msgs) { const r = await f(pushServer(p) + "/" + topic, { method: "POST", body: m, headers: { "Title": "sku-plan " + payload.version } });
-      if (!r.ok) throw new Error("推送失败 HTTP " + r.status); }
+      if (!r.ok) throw new Error("推送失败 / Error de envío HTTP " + r.status); }
     return { version: payload.version, parts: msgs.length, bytes: msgs.reduce((a, m) => a + m.length, 0), skus: payload.skus.length };
   }
   const randomTopic = () => { const a = "abcdefghijkmnpqrstuvwxyz23456789"; let t = "skus-"; const r = new Uint8Array(24); (root.crypto || require("crypto").webcrypto).getRandomValues(r); r.forEach((x) => (t += a[x % a.length])); return t; };

@@ -1,5 +1,5 @@
 <!doctype html><html lang=zh><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
-<title>SKU 管理后台</title>
+<title>SKU 管理后台 / Administración SKU</title>
 <link rel=preconnect href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel=stylesheet>
 <style>
 :root{--pri:#4f46e5;--pri2:#4338ca;--ok:#16a34a;--bad:#dc2626;--warn:#d97706;--bg:#f5f6fa;--card:#fff;--line:#e5e7eb;--txt:#0f172a;--mut:#64748b}
@@ -42,91 +42,92 @@ tr.skip td{opacity:.4;text-decoration:line-through}
 .advonly{display:none}.adv .advonly{display:table-cell}.adv div.advonly,.adv label.advonly{display:flex}
 details{margin:6px 0}summary{cursor:pointer;font-weight:600;color:var(--pri);padding:12px 0;font-size:17px}
 .pub{text-align:center;padding:10px}.pub .kpi{margin:18px 0}
-@media(max-width:700px){.hidem{display:none}body{font-size:16px}section,nav{padding-left:12px;padding-right:12px}.card{padding:16px}nav.steps button{min-width:110px;font-size:15px;padding:8px}td input,td select{min-width:90px}}
+.es{display:block;font-size:.82em;font-weight:500;opacity:.85;line-height:1.25}.esi{font-weight:500;opacity:.85}nav.steps button .es{font-size:13px}
+@media(max-width:700px){#pubtxt{flex-basis:100%;font-size:15px}#pubbar .b{width:100%}nav.steps button{min-width:140px;font-size:15px}header h1{flex-basis:100%}.hidem{display:none}body{font-size:16px}section,nav{padding-left:12px;padding-right:12px}.card{padding:16px}nav.steps button{min-width:110px;font-size:15px;padding:8px}td input,td select{min-width:90px}}
 </style>
-<header><h1>📦 SKU 分拣管理</h1><span class=pn id=pname></span><a href="scanner.html">📷 打开扫描页 →</a></header>
-<div id=pubbar><span id=pubtxt style="flex:1"></span><button class="b ok" style="margin:0" onclick="goStep('publish')">去发布 →</button></div>
+<header><h1>📦 SKU 分拣管理<span class=es>Administración de clasificación SKU</span></h1><span class=pn id=pname></span><a href="scanner.html">📷 打开扫描页 / Abrir escáner →</a></header>
+<div id=pubbar><span id=pubtxt style="flex:1"></span><button class="b ok" style="margin:0" onclick="goStep('publish')">去发布 / Ir a publicar →</button></div>
 <nav class=steps>
- <button data-t=import class=on><i>1</i>上传清单</button><button data-t=pick><i>2</i>选择列</button><button data-t=alloc><i>3</i>分配库位</button><button data-t=publish><i>4</i>同意并发布</button></nav>
-<nav class=tools><button data-t=dash>📊 进度看板</button><button data-t=data>⚙️ 数据与设置</button></nav>
+ <button data-t=import class=on><i>1</i><span>上传清单<span class=es>Subir lista</span></span></button><button data-t=pick><i>2</i><span>选择列<span class=es>Elegir columnas</span></span></button><button data-t=alloc><i>3</i><span>分配库位<span class=es>Asignar ubicaciones</span></span></button><button data-t=publish><i>4</i><span>同意并发布<span class=es>Aprobar y publicar</span></span></button></nav>
+<nav class=tools><button data-t=dash>📊 进度看板 / Panel de progreso</button><button data-t=data>⚙️ 数据与设置 / Datos y ajustes</button></nav>
 
 <section id=import class=on>
- <div class=card><h2>第 1 步：上传柜子清单</h2><p class=hint>支持 PDF、Excel、CSV，也可以直接粘贴表格。上传后只会生成“草稿”，不会影响扫描页。</p>
-  <label class=upload for=file>📄 点击选择文件<small>PDF / XLSX / CSV</small></label><input type=file id=file accept=".csv,.txt,.xlsx,.xls,.pdf" hidden>
+ <div class=card><h2>第 1 步：上传柜子清单<span class=es>Paso 1: subir la lista del contenedor</span></h2><p class=hint>支持 PDF、Excel、CSV，也可以直接粘贴表格。上传后只会生成“草稿”，不会影响扫描页。<span class=es>Admite PDF, Excel y CSV, o pegue la tabla. Solo se crea un “borrador”; el escáner no cambia.</span></p>
+  <label class=upload for=file>📄 点击选择文件<span class=es>Haga clic para elegir un archivo</span><small>PDF / XLSX / CSV</small></label><input type=file id=file accept=".csv,.txt,.xlsx,.xls,.pdf" hidden>
   <div id=impMsg></div>
-  <details><summary>或者：粘贴表格文字</summary>
-   <textarea id=paste placeholder="每行：SKU、品名、数量（用 Tab、逗号或多个空格分隔）"></textarea>
-   <button class=b onclick=doPaste()>解析粘贴内容</button></details>
-  <div class=row style="margin-top:10px"><label class=field>柜号 / 名称（可选）<input id=projName placeholder="如 IB040260813" oninput="P.name=this.value;Core.saveDraft(P)"></label>
-   <label class=field style="flex-direction:row;align-items:center;gap:10px;margin-top:22px"><input type=checkbox id=replace checked> 替换现有清单</label></div></div>
+  <details><summary>或者：粘贴表格文字 / O bien: pegar texto de la tabla</summary>
+   <textarea id=paste placeholder="每行：SKU、品名、数量（用 Tab、逗号或多个空格分隔）&#10;Cada línea: SKU, nombre, cantidad (separados por Tab, coma o espacios)"></textarea>
+   <button class=b onclick=doPaste()>解析粘贴内容 / Analizar texto pegado</button></details>
+  <div class=row style="margin-top:10px"><label class=field><span>柜号 / 名称（可选）<span class=es>N.º de contenedor / nombre (opcional)</span></span><input id=projName placeholder="如 / p. ej. IB040260813" oninput="P.name=this.value;Core.saveDraft(P)"></label>
+   <label class=field style="flex-direction:row;align-items:center;gap:10px;margin-top:22px"><input type=checkbox id=replace checked> 替换现有清单 / Reemplazar la lista actual</label></div></div>
 </section>
 
 <section id=pick>
- <div class=card><h2>第 2 步：确认哪一列是什么</h2><p class=hint>系统已自动识别（黄色高亮）。如不对，点列头下方的按钮重新选择：<b>SKU</b>、<b>数量</b>、<b>品名</b>。</p>
+ <div class=card><h2>第 2 步：确认哪一列是什么<span class=es>Paso 2: confirmar qué es cada columna</span></h2><p class=hint>系统已自动识别（黄色高亮）。如不对，点列头下方的按钮重新选择：<b>SKU</b>、<b>数量</b>、<b>品名</b>。<span class=es>El sistema las detectó (resaltado amarillo). Si no es correcto, use los botones bajo cada encabezado: <b>SKU</b>, <b>Cantidad</b>, <b>Nombre</b>.</span></p>
   <div class="card brief" id=brief2 style="display:none"></div>
-  <div id=pickEmpty class="msg bad">还没有上传清单，请先回到第 1 步。</div>
-  <div id=pickBody style="display:none"><label class=field style="flex-direction:row;align-items:center;gap:10px"><input type=checkbox id=hdr onchange=renderPick()> 第一行是表头（跳过）</label>
+  <div id=pickEmpty class="msg bad">还没有上传清单，请先回到第 1 步。/ Aún no hay lista; vuelva al paso 1.</div>
+  <div id=pickBody style="display:none"><label class=field style="flex-direction:row;align-items:center;gap:10px"><input type=checkbox id=hdr onchange=renderPick()> 第一行是表头（跳过）/ La primera fila es encabezado (omitir)</label>
   <div class=tw style="max-height:50vh"><table id=pickT></table></div><small id=pickInfo class=hint></small>
-  <div id=pickMsg></div><button class="b big" onclick=genMapping()>生成建议库位 →</button></div></div>
+  <div id=pickMsg></div><button class="b big" onclick=genMapping()>生成建议库位 →<span class=es>Generar ubicaciones sugeridas</span></button></div></div>
 </section>
 
 <section id=alloc>
- <div class=card><div class="card brief" id=brief3 style="display:none;margin:-8px 0 14px"></div><h2>第 3 步：分配库位</h2><p class=hint>系统已按规则给每个 SKU 建议了库位。可直接在表格里修改，改过的行会被 🔒 锁定。</p>
+ <div class=card><div class="card brief" id=brief3 style="display:none;margin:-8px 0 14px"></div><h2>第 3 步：分配库位<span class=es>Paso 3: asignar ubicaciones</span></h2><p class=hint>系统已按规则给每个 SKU 建议了库位。可直接在表格里修改，改过的行会被 🔒 锁定。<span class=es>Cada SKU ya tiene una ubicación sugerida. Puede editarla en la tabla; las filas editadas quedan 🔒 bloqueadas.</span></p>
   <div class=row>
-   <label class=field>摆放方式<select id=defMode><option value=pallet>按托盘（每托放 N 箱）</option><option value=single>单一区域（整款放一处）</option></select></label>
-   <label class=field>每托箱数 N<input id=defN type=number min=1 style="width:120px"></label>
-   <div class=field style="width:100%"><span>坐标样式（库位怎么命名）</span>
+   <label class=field><span>摆放方式<span class=es>Modo de colocación</span></span><select id=defMode><option value=pallet>按托盘（每托放 N 箱）/ Por tarima (N cajas c/u)</option><option value=single>单一区域（整款放一处）/ Zona única (todo junto)</option></select></label>
+   <label class=field><span>每托箱数 N<span class=es>Cajas por tarima N</span></span><input id=defN type=number min=1 style="width:120px"></label>
+   <div class=field style="width:100%"><span>坐标样式（库位怎么命名）<span class=es>Formato de coordenadas (cómo se nombran)</span></span>
     <input type=hidden id=coordStyle><div class=seg id=seg>
-     <button type=button data-v=alpha onclick="setStyle('alpha')"><b>A B C …</b><small>纯字母（Z 后是 AA）</small></button>
-     <button type=button data-v=number onclick="setStyle('number')"><b>1 2 3 …</b><small>纯数字</small></button>
-     <button type=button data-v=alphanum onclick="setStyle('alphanum')"><b>A1 B23 …</b><small>字母 + 数字</small></button></div></div>
-   <label class="field advonly" style="display:none">排（字母）<input id=rows style="width:130px"></label>
-   <label class="field advonly" style="display:none">每排最多<input id=perRow type=number style="width:120px"></label></div>
-  <label class=field style="flex-direction:row;align-items:center;gap:10px"><input type=checkbox id=adv onchange=toggleAdv()> 显示高级选项（每个 SKU 单独设置方式 / N，排数）</label>
-  <div><button class=b onclick=doAuto(true)>🔄 自动分配（保留手动修改）</button><button class="b g" onclick=doAuto(false)>全部重新分配</button></div>
+     <button type=button data-v=alpha onclick="setStyle('alpha')"><b>A B C …</b><small>纯字母（Z 后是 AA）<br>Solo letras (tras Z sigue AA)</small></button>
+     <button type=button data-v=number onclick="setStyle('number')"><b>1 2 3 …</b><small>纯数字<br>Solo números</small></button>
+     <button type=button data-v=alphanum onclick="setStyle('alphanum')"><b>A1 B23 …</b><small>字母 + 数字<br>Letra + número</small></button></div></div>
+   <label class="field advonly" style="display:none"><span>排（字母）<span class=es>Filas (letras)</span></span><input id=rows style="width:130px"></label>
+   <label class="field advonly" style="display:none"><span>每排最多<span class=es>Máx. por fila</span></span><input id=perRow type=number style="width:120px"></label></div>
+  <label class=field style="flex-direction:row;align-items:center;gap:10px"><input type=checkbox id=adv onchange=toggleAdv()> 显示高级选项（每个 SKU 单独设置方式 / N，排数）/ Opciones avanzadas (modo / N por SKU, filas)</label>
+  <div><button class=b onclick=doAuto(true)>🔄 自动分配（保留手动修改）<span class=es>Asignar automáticamente (mantener cambios)</span></button><button class="b g" onclick=doAuto(false)>全部重新分配<span class=es>Reasignar todo</span></button></div>
   <div id=allocMsg></div></div>
  <div class=card style="padding:12px"><div class=tw style="max-height:65vh"><table id=allocT></table></div>
-  <p class=hint style="margin:12px 8px 4px">库位格式：<code>A1 A2 A3</code> 或 <code>A1-A3</code>；单一区域填一个字母或数字，如 <code>B</code>。</p></div>
- <div class=card><details><summary>✏️ 编辑 SKU 清单（品名 / 箱数 / 增删）<small id=cnt style="color:var(--mut);font-weight:400"></small></summary>
-  <div class=tw style="max-height:55vh"><table id=mapT></table></div><button class="b g" onclick=addRow()>+ 新增一行</button></details></div>
- <div style="text-align:center"><button class="b big" onclick="goStep('publish')">下一步：核对并发布 →</button></div>
+  <p class=hint style="margin:12px 8px 4px">库位格式：<code>A1 A2 A3</code> 或 <code>A1-A3</code>；单一区域填一个字母或数字，如 <code>B</code>。<span class=es>Formato: <code>A1 A2 A3</code> o <code>A1-A3</code>; para zona única, una letra o número, p. ej. <code>B</code>.</span></p></div>
+ <div class=card><details><summary>✏️ 编辑 SKU 清单（品名 / 箱数 / 增删）· Editar lista de SKU (nombre / cajas / agregar / quitar)<small id=cnt style="color:var(--mut);font-weight:400"></small></summary>
+  <div class=tw style="max-height:55vh"><table id=mapT></table></div><button class="b g" onclick=addRow()>+ 新增一行 / Agregar fila</button></details></div>
+ <div style="text-align:center"><button class="b big" onclick="goStep('publish')">下一步：核对并发布 →<span class=es>Siguiente: revisar y publicar</span></button></div>
 </section>
 
 <section id=publish>
- <div class="card pub"><div class="card brief" id=brief4 style="display:none;text-align:left"></div><h2>第 4 步：核对并同意发布</h2><p class=hint>发布后，扫描页会立即使用这份映射。发布前一切都只是草稿。</p>
-  <div class=kpi><div>SKU 数<b id=pSku>0</b></div><div>总箱数<b id=pBox>0</b></div><div>库位数<b id=pSlots>0</b></div><div>问题<b id=pIssues>0</b></div></div>
+ <div class="card pub"><div class="card brief" id=brief4 style="display:none;text-align:left"></div><h2>第 4 步：核对并同意发布<span class=es>Paso 4: revisar y aprobar la publicación</span></h2><p class=hint>发布后，扫描页会立即使用这份映射。发布前一切都只是草稿。<span class=es>Al publicar, el escáner usa este mapeo de inmediato. Antes de publicar todo es borrador.</span></p>
+  <div class=kpi><div>SKU 数 / N.º de SKU<b id=pSku>0</b></div><div>总箱数 / Total de cajas<b id=pBox>0</b></div><div>库位数 / Ubicaciones<b id=pSlots>0</b></div><div>问题 / Problemas<b id=pIssues>0</b></div></div>
   <div id=pubMsg></div>
-  <button class="b ok big" onclick=publish()>✅ 同意并发布</button></div>
- <div class="card pub" id=pushCard><h2>📡 推送到设备（树莓派）</h2><p class=hint>把<b>已发布</b>的库位映射一键发到仓库里的树莓派，几秒内生效，屏幕和喇叭会提示“新库位已更新”。</p>
-  <div class=kpi><div>推送频道<b id=pushTopicShow style="font-size:16px;word-break:break-all">未设置</b></div><div>上次推送<b id=pushVer style="font-size:22px">—</b></div><div>设备确认<b id=pushAck style="font-size:22px">—</b></div></div>
+  <button class="b ok big" onclick=publish()>✅ 同意并发布<span class=es>Aprobar y publicar</span></button></div>
+ <div class="card pub" id=pushCard><h2>📡 推送到设备（树莓派）<span class=es>Enviar al dispositivo (Raspberry Pi)</span></h2><p class=hint>把<b>已发布</b>的库位映射一键发到仓库里的树莓派，几秒内生效，屏幕和喇叭会提示“新库位已更新”。<span class=es>Envía con un clic el mapeo <b>publicado</b> a la Raspberry Pi del almacén; en segundos la pantalla y el altavoz avisan “Ubicaciones actualizadas”.</span></p>
+  <div class=kpi><div>推送频道 / Canal<b id=pushTopicShow style="font-size:16px;word-break:break-all">未设置 / Sin configurar</b></div><div>上次推送 / Último envío<b id=pushVer style="font-size:22px">—</b></div><div>设备确认 / Confirmación<b id=pushAck style="font-size:22px">—</b></div></div>
   <div id=pushMsg></div>
-  <button class="b big" id=pushBtn onclick=doPush() style="background:#2563eb;box-shadow:0 6px 18px #2563eb40">📡 推送到设备</button>
-  <p class=hint style="margin-top:12px">频道在“数据与设置”里设置，必须和树莓派 config.yaml 里的 push.topic 一致。</p></div>
+  <button class="b big" id=pushBtn onclick=doPush() style="background:#2563eb;box-shadow:0 6px 18px #2563eb40">📡 推送到设备<span class=es>Enviar al dispositivo</span></button>
+  <p class=hint style="margin-top:12px">频道在“数据与设置”里设置，必须和树莓派 config.yaml 里的 push.topic 一致。<span class=es>El canal se configura en “Datos y ajustes” y debe coincidir con push.topic en config.yaml de la Raspberry Pi.</span></p></div>
 </section>
 
 <section id=dash>
- <div class=kpi><div>SKU<b id=kSku></b></div><div>总箱数<b id=kBox></b></div><div>已扫<b id=kScan></b></div><div>完成<b id=kPct></b></div></div>
- <div class=card><h3>各 SKU 进度</h3><input id=flt placeholder="🔍 搜索 SKU" style="width:100%;margin-bottom:12px">
+ <div class=kpi><div>SKU<b id=kSku></b></div><div>总箱数 / Total de cajas<b id=kBox></b></div><div>已扫 / Escaneadas<b id=kScan></b></div><div>完成 / Completado<b id=kPct></b></div></div>
+ <div class=card><h3>各 SKU 进度 / Progreso por SKU</h3><input id=flt placeholder="🔍 搜索 SKU / Buscar SKU" style="width:100%;margin-bottom:12px">
   <div class=tw style="max-height:55vh"><table id=progT></table></div>
-  <button class="b g" onclick="dl('progress.csv',Core.exportProgressCsv(P,S))">导出进度 CSV</button></div>
- <div class=card><h3>扫描记录 <small>（本设备）</small></h3><div class=tw style="max-height:40vh"><table id=histT></table></div>
-  <button class="b g" onclick="dl('scan_history.csv',Core.exportHistCsv(S))">导出记录 CSV</button>
-  <button class="b r" onclick=resetCounts()>清零计数和记录</button></div>
+  <button class="b g" onclick="dl('progress.csv',Core.exportProgressCsv(P,S))">导出进度 CSV / Exportar progreso CSV</button></div>
+ <div class=card><h3>扫描记录 / Historial de escaneos <small>（本设备 / este dispositivo）</small></h3><div class=tw style="max-height:40vh"><table id=histT></table></div>
+  <button class="b g" onclick="dl('scan_history.csv',Core.exportHistCsv(S))">导出记录 CSV / Exportar historial CSV</button>
+  <button class="b r" onclick=resetCounts()>清零计数和记录 / Reiniciar contadores e historial</button></div>
 </section>
 
 <section id=data>
- <div class=card><h3>导出 / 导入（在其他手机或设备间共享映射）</h3>
-  <button class=b onclick="dl('sku-station-'+P.id+'.json',Core.exportBundle(P,S))">导出 JSON（含计数）</button>
-  <button class="b g" onclick="dl('sku-project-'+P.id+'.json',Core.exportBundle(P,null))">仅导出映射</button>
-  <label class="b g" style="display:inline-flex;align-items:center;cursor:pointer">导入 JSON<input type=file id=jfile accept=".json" hidden></label>
-  <p class=hint>扫描页在同一浏览器中会立即使用发布的映射；其他设备可在扫描页“导入映射”中导入此 JSON。以后接入服务器后，设备每 30 分钟自动同步。</p></div>
- <div class=card><h3>📡 设备推送频道</h3><p class=hint>树莓派通过这个频道接收推送。频道名就是密码，请勿外传。</p>
-  <label class=field>频道（topic）<input id=pushTopic placeholder="skus-xxxxxxxxxxxxxxxxxxxxxxxx" style="width:100%;max-width:460px"></label>
-  <label class=field>服务器<input id=pushServer placeholder="https://ntfy.sh" style="width:100%;max-width:460px"></label>
-  <button class=b onclick=savePush()>保存</button><button class="b g" onclick="if(!$('pushTopic').value||confirm('生成新频道后，树莓派也要改成新频道，继续？')){$('pushTopic').value=Core.randomTopic();savePush()}">生成新频道</button></div>
- <div class=card><h3>服务器同步（预留）</h3><label class=field>服务器地址<input id=syncUrl placeholder="https://..." style="width:100%;max-width:420px"></label><button class="b g" onclick=saveSync()>保存</button>
-  <p class=hint>接口：GET/PUT /api/project，POST /api/scans。留空则只在本机保存。</p></div>
- <div class=card><button class="b r" onclick=newProj()>新建空项目（清空映射）</button></div>
+ <div class=card><h3>导出 / 导入（在其他手机或设备间共享映射）<span class=es>Exportar / importar (compartir el mapeo entre dispositivos)</span></h3>
+  <button class=b onclick="dl('sku-station-'+P.id+'.json',Core.exportBundle(P,S))">导出 JSON（含计数）/ Exportar JSON (con contadores)</button>
+  <button class="b g" onclick="dl('sku-project-'+P.id+'.json',Core.exportBundle(P,null))">仅导出映射 / Exportar solo mapeo</button>
+  <label class="b g" style="display:inline-flex;align-items:center;cursor:pointer">导入 JSON / Importar JSON<input type=file id=jfile accept=".json" hidden></label>
+  <p class=hint>扫描页在同一浏览器中会立即使用发布的映射；其他设备可在扫描页“导入映射”中导入此 JSON。<span class=es>En este navegador el escáner usa el mapeo publicado al instante; otros dispositivos pueden importar este JSON en “Importar mapeo” del escáner.</span></p></div>
+ <div class=card><h3>📡 设备推送频道<span class=es>Canal de envío a dispositivos</span></h3><p class=hint>树莓派通过这个频道接收推送。频道名就是密码，请勿外传。<span class=es>La Raspberry Pi recibe los envíos por este canal. El nombre del canal es la contraseña: no lo comparta.</span></p>
+  <label class=field><span>频道（topic）<span class=es>Canal (topic)</span></span><input id=pushTopic placeholder="skus-xxxxxxxxxxxxxxxxxxxxxxxx" style="width:100%;max-width:460px"></label>
+  <label class=field><span>服务器<span class=es>Servidor</span></span><input id=pushServer placeholder="https://ntfy.sh" style="width:100%;max-width:460px"></label>
+  <button class=b onclick=savePush()>保存 / Guardar</button><button class="b g" onclick="if(!$('pushTopic').value||confirm('生成新频道后，树莓派也要改成新频道，继续？\n Al generar un canal nuevo, la Raspberry Pi también debe cambiarse. ¿Continuar?')){$('pushTopic').value=Core.randomTopic();savePush()}">生成新频道 / Generar canal nuevo</button></div>
+ <div class=card><h3>服务器同步（预留）/ Sincronización con servidor (reservado)</h3><label class=field><span>服务器地址<span class=es>Dirección del servidor</span></span><input id=syncUrl placeholder="https://..." style="width:100%;max-width:420px"></label><button class="b g" onclick=saveSync()>保存 / Guardar</button>
+  <p class=hint>接口：GET/PUT /api/project，POST /api/scans。留空则只在本机保存。<span class=es>API: GET/PUT /api/project, POST /api/scans. Si se deja vacío, solo se guarda en este equipo.</span></p></div>
+ <div class=card><button class="b r" onclick=newProj()>新建空项目（清空映射）<span class=es>Nuevo proyecto vacío (borrar mapeo)</span></button></div>
 </section>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -144,29 +145,29 @@ function toggleAdv(){$("alloc").classList.toggle("adv",$("adv").checked);documen
 function msg(el,txt,ok){$(el).innerHTML=`<div class="msg ${ok?"ok":"bad"}">${txt}</div>`}
 function dl(name,txt){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/plain;charset=utf-8"}));a.download=name;a.click()}
 // ----- import -----
-function showRows(rows,src){if(!rows.length){msg("impMsg","没有识别到表格内容",false);return}
+function showRows(rows,src){if(!rows.length){msg("impMsg","没有识别到表格内容 / No se detectó ninguna tabla",false);return}
   const d=Core.detectColumns(rows);RAW={rows,cols:{sku:d.sku,qty:d.qty,name:d.name,ord:d.ord},src};$("hdr").checked=d.hasHeader;
-  msg("impMsg",`${src}：读取到 ${rows.length} 行。请检查下方预览并确认列。`,true);renderPick();goStep("pick")}
+  msg("impMsg",`${src}：读取到 ${rows.length} 行。请检查下方预览并确认列。<br>${src}: ${rows.length} filas leídas. Revise la vista previa y confirme las columnas.`,true);renderPick();goStep("pick")}
 function renderBrief(id,b,title){const e=$(id);if(!b){e.style.display="none";return}e.style.display="block";
   const k=(n,l)=>n==null?"":`<div><b>${n}</b>${l}</div>`;
-  e.innerHTML=`<h3>${title}</h3><div class=bk>${k(b.unique,"不同 SKU")}${k(b.total,"总数量（合并重复后）")}${k(b.rows,"解析行数")}${k(b.orders,"入库单数")}${k(b.skipped,"跳过行数")}</div>`+
-   (b.top.length?`<div class=top3>最大 3 个：${b.top.map(x=>`<span>${esc(x.sku)} <b>${x.boxes}</b></span>`).join("")}</div>`:"")+
-   `<div class=warnbox>${b.piecesWarning?`⚠️ <b>数量看起来像“件数”而不是“箱数”</b>（平均每个 SKU ${b.avg}）。扫描按<b>箱</b>计数、每箱一个标签，请确认这列的单位。`:"请确认这列数量的单位是“箱”（每箱一个标签）。"}</div>`}
+  e.innerHTML=`<h3>${title}</h3><div class=bk>${k(b.unique,"不同 SKU / SKU distintos")}${k(b.total,"总数量（合并重复后）/ Cantidad total (sin duplicados)")}${k(b.rows,"解析行数 / Filas leídas")}${k(b.orders,"入库单数 / Órdenes de entrada")}${k(b.skipped,"跳过行数 / Filas omitidas")}</div>`+
+   (b.top.length?`<div class=top3>最大 3 个 / Los 3 mayores：${b.top.map(x=>`<span>${esc(x.sku)} <b>${x.boxes}</b></span>`).join("")}</div>`:"")+
+   `<div class=warnbox>${b.piecesWarning?`⚠️ <b>数量看起来像“件数”而不是“箱数”</b>（平均每个 SKU ${b.avg}）。扫描按<b>箱</b>计数、每箱一个标签，请确认这列的单位。<br>⚠️ <b>La cantidad parece “piezas”, no “cajas”</b> (promedio ${b.avg} por SKU). Se cuenta por <b>caja</b> (una etiqueta por caja); confirme la unidad.`:"请确认这列数量的单位是“箱”（每箱一个标签）。<br>Confirme que la unidad de esta columna es “caja” (una etiqueta por caja)."}</div>`}
 function pickBrief(){return RAW?Core.brief(RAW.rows,RAW.cols,$("hdr").checked):null}
-function renderPick(){if(!RAW)return;renderBrief("brief2",pickBrief(),"📋 清单概览（随选择实时更新）");const{rows,cols}=RAW,n=Math.max(...rows.map(r=>r.length));const L={sku:"SKU",qty:"数量",name:"品名"};$("pickEmpty").style.display="none";$("pickBody").style.display="block";
-  $("pickInfo").textContent=`(${rows.length} 行，显示前 40 行；划线灰色行是表头/非数据行，会自动忽略)`;
-  let h="<tr>"+Array.from({length:n},(_,i)=>`<th>列${i+1}<br>`+Object.keys(L).map(k=>`<button class="b sm ${cols[k]===i?"":"g"}" style="margin:2px" onclick="pickCol('${k}',${i})">${L[k]}</button>`).join("")+"</th>").join("")+"</tr>";
+function renderPick(){if(!RAW)return;renderBrief("brief2",pickBrief(),"📋 清单概览（随选择实时更新）/ Resumen de la lista (se actualiza al elegir)");const{rows,cols}=RAW,n=Math.max(...rows.map(r=>r.length));const L={sku:"SKU",qty:"数量 / Cantidad",name:"品名 / Nombre"};$("pickEmpty").style.display="none";$("pickBody").style.display="block";
+  $("pickInfo").textContent=`(${rows.length} 行，显示前 40 行；划线灰色行是表头/非数据行，会自动忽略 / ${rows.length} filas, se muestran 40; las filas grises tachadas son encabezados o no-datos y se ignoran)`;
+  let h="<tr>"+Array.from({length:n},(_,i)=>`<th>列 / Col. ${i+1}<br>`+Object.keys(L).map(k=>`<button class="b sm ${cols[k]===i?"":"g"}" style="margin:2px" onclick="pickCol('${k}',${i})">${L[k]}</button>`).join("")+"</th>").join("")+"</tr>";
   h+=rows.slice(0,40).map((r,ri)=>`<tr class="${(ri===0&&$("hdr").checked)||(cols.sku>=0&&!Core.isDataRow(r,cols))?"skip":""}">`+Array.from({length:n},(_,i)=>{const k=Object.keys(L).find(k=>cols[k]===i);
    return `<td style="${k?"background:#fff8d6":""}">${esc(r[i]??"")}</td>`}).join("")+"</tr>").join("");$("pickT").innerHTML=h;
-  $("pickMsg").innerHTML=`<p>已选：SKU=${cols.sku>=0?"列"+(cols.sku+1):"<b style=color:#c00>未选</b>"}，数量=${cols.qty>=0?"列"+(cols.qty+1):"未选（按0）"}，品名=${cols.name>=0?"列"+(cols.name+1):"无"}</p>`}
+  $("pickMsg").innerHTML=`<p>已选 / Seleccionado：SKU=${cols.sku>=0?"列 / col. "+(cols.sku+1):"<b style=color:#c00>未选 / sin elegir</b>"}，数量 / cantidad=${cols.qty>=0?"列 / col. "+(cols.qty+1):"未选（按0）/ sin elegir (0)"}，品名 / nombre=${cols.name>=0?"列 / col. "+(cols.name+1):"无 / ninguno"}</p>`}
 function pickCol(k,i){RAW.cols[k]=RAW.cols[k]===i?-1:i;renderPick()}
-function genMapping(){if(!RAW||RAW.cols.sku<0){msg("pickMsg","请先选择 SKU 列",false);return}
-  const{list,skipped}=Core.fromColumns(RAW.rows,RAW.cols,$("hdr").checked);if(!list.length){msg("pickMsg","没有解析出有效 SKU，请检查所选列",false);return}
+function genMapping(){if(!RAW||RAW.cols.sku<0){msg("pickMsg","请先选择 SKU 列 / Elija primero la columna SKU",false);return}
+  const{list,skipped}=Core.fromColumns(RAW.rows,RAW.cols,$("hdr").checked);if(!list.length){msg("pickMsg","没有解析出有效 SKU，请检查所选列 / No se encontraron SKU válidos; revise las columnas",false);return}
   Core.mergeSkus(P,list,$("replace").checked);P.skus.forEach(s=>{s.locked=false;if(!$("replace").checked)return});
   try{Core.autoAssign(P,{keepManual:false})}catch(x){msg("pickMsg",x.message,false)}
   P.meta=pickBrief();Core.saveDraft(P);renderAll();goStep("alloc");
-  msg("allocMsg",`已从${RAW.src}生成建议映射：${list.length} 个 SKU，共 ${list.reduce((a,x)=>a+x.boxes,0)} 箱（跳过 ${skipped} 行非数据）。可修改后点“同意并发布”。`,true)}
-function doPaste(){showRows(Core.parseTable($("paste").value),"粘贴内容")}
+  msg("allocMsg",`已从${RAW.src}生成建议映射：${list.length} 个 SKU，共 ${list.reduce((a,x)=>a+x.boxes,0)} 箱（跳过 ${skipped} 行非数据）。可修改后点“同意并发布”。<br>Mapeo sugerido desde ${RAW.src}: ${list.length} SKU, ${list.reduce((a,x)=>a+x.boxes,0)} cajas (${skipped} filas omitidas). Puede editarlo y pulsar “Aprobar y publicar”.`,true)}
+function doPaste(){showRows(Core.parseTable($("paste").value),"粘贴内容 / Texto pegado")}
 async function pdfRows(buf){pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
   const pdf=await pdfjsLib.getDocument({data:buf}).promise;let txt="";
   for(let i=1;i<=pdf.numPages;i++){const c=await (await pdf.getPage(i)).getTextContent();const lines=new Map();
@@ -177,81 +178,81 @@ async function pdfRows(buf){pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdn.
 $("file").onchange=async e=>{const f=e.target.files[0];if(!f)return;const n=f.name.toLowerCase();try{
   if(n.endsWith(".pdf")){const t=await pdfRows(await f.arrayBuffer());$("paste").value=t;showRows(Core.parseTable(t),"PDF")}
   else if(n.endsWith(".xlsx")||n.endsWith(".xls")){const wb=XLSX.read(await f.arrayBuffer());const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:""}).map(r=>r.map(x=>String(x).trim()).filter(x=>x!=="")).filter(r=>r.length>=2);showRows(rows,"Excel")}
-  else{const t=await f.text();$("paste").value=t;showRows(Core.parseTable(t),"CSV")}}catch(x){msg("impMsg","读取失败："+x,false)}e.target.value=""};
-function renderMap(){$("cnt").textContent=`${P.skus.length} 个 SKU · ${P.skus.reduce((a,s)=>a+(+s.boxes||0),0)} 箱`;
-  $("mapT").innerHTML="<tr><th>SKU</th><th>品名</th><th style='width:80px'>箱数</th><th style='width:40px'></th></tr>"+P.skus.map((s,i)=>
+  else{const t=await f.text();$("paste").value=t;showRows(Core.parseTable(t),"CSV")}}catch(x){msg("impMsg","读取失败 / Error al leer："+x,false)}e.target.value=""};
+function renderMap(){$("cnt").textContent=`${P.skus.length} 个 SKU / SKUs · ${P.skus.reduce((a,s)=>a+(+s.boxes||0),0)} 箱 / cajas`;
+  $("mapT").innerHTML="<tr><th>SKU</th><th>品名 / Nombre</th><th style='width:90px'>箱数 / Cajas</th><th style='width:40px'></th></tr>"+P.skus.map((s,i)=>
   `<tr><td><input value="${esc(s.sku)}" onchange="P.skus[${i}].sku=Core.normSku(this.value);save()"></td><td><input value="${esc(s.name)}" onchange="P.skus[${i}].name=this.value;save()"></td>
    <td><input type=number value="${s.boxes}" onchange="P.skus[${i}].boxes=+this.value;save()"></td><td><button class="b g" onclick="P.skus.splice(${i},1);save()">✕</button></td></tr>`).join("")}
 function addRow(){P.skus.push({sku:"NEW-SKU",name:"",boxes:0,mode:null,n:null,slots:[],zone:null});save()}
 // ----- allocation -----
 function renderAlloc(){const c=P.config;$("defMode").value=c.defaultMode;$("defN").value=c.defaultN;$("rows").value=c.rows.join("");$("coordStyle").value=Core.styleOf(P);document.querySelectorAll("#seg button").forEach(b=>b.classList.toggle("on",b.dataset.v===Core.styleOf(P)));$("perRow").value=c.perRow;
   const errs=Core.validate(P),bad=new Set(errs.map(e=>e.sku));
-  $("allocT").innerHTML="<tr><th>SKU</th><th class=hidem>品名</th><th>箱数</th><th class=advonly style='width:150px'>方式</th><th class=advonly style='width:90px'>N</th><th>需要库位</th><th style='min-width:200px'>库位 / 区域（可修改）</th></tr>"+P.skus.map((s,i)=>{
+  $("allocT").innerHTML="<tr><th>SKU</th><th class=hidem>品名 / Nombre</th><th>箱数 / Cajas</th><th class=advonly style='width:150px'>方式 / Modo</th><th class=advonly style='width:90px'>N</th><th>需要库位 / Ubic. necesarias</th><th style='min-width:200px'>库位 / 区域（可修改）<br>Ubicación / zona (editable)</th></tr>"+P.skus.map((s,i)=>{
    const m=Core.modeOf(P,s);return `<tr class="${bad.has(s.sku)?"err":""}"><td class=sku>${esc(s.sku)}</td><td class=hidem>${esc(s.name)}</td><td>${s.boxes}</td>
-   <td class=advonly><select onchange="setMode(${i},this.value)"><option value="">默认(${c.defaultMode==="pallet"?"托盘":"区域"})</option><option value=pallet ${s.mode==="pallet"?"selected":""}>按托盘</option><option value=single ${s.mode==="single"?"selected":""}>单一区域</option></select></td>
+   <td class=advonly><select onchange="setMode(${i},this.value)"><option value="">默认 / Predet. (${c.defaultMode==="pallet"?"托盘 / tarima":"区域 / zona"})</option><option value=pallet ${s.mode==="pallet"?"selected":""}>按托盘 / Por tarima</option><option value=single ${s.mode==="single"?"selected":""}>单一区域 / Zona única</option></select></td>
    <td class=advonly>${m==="pallet"?`<input type=number min=1 placeholder="${c.defaultN}" value="${s.n||""}" onchange="P.skus[${i}].n=+this.value||null;save()">`:"—"}</td>
-   <td>${m==="pallet"?Core.slotsNeeded(P,s):"1区"}</td>
+   <td>${m==="pallet"?Core.slotsNeeded(P,s):"1区 / 1 zona"}</td>
    <td><input value="${esc(m==="single"?(s.zone||""):s.slots.join(" "))}" onchange="setSlots(${i},this.value)">${s.locked?" 🔒":""}</td></tr>`}).join("");
-  if(errs.length)msg("allocMsg","⚠️ "+errs.slice(0,8).map(e=>`${e.sku} ${e.slot||""} ${e.msg}`).join("<br>")+(errs.length>8?`<br>…共 ${errs.length} 个问题`:""),false);
-  else if(P.skus.length)msg("allocMsg",`✓ 校验通过：${P.skus.length} 个 SKU，${P.skus.reduce((a,s)=>a+(s.slots||[]).length,0)} 个托盘库位`,true)}
+  if(errs.length)msg("allocMsg","⚠️ "+errs.slice(0,8).map(e=>`${e.sku} ${e.slot||""} ${e.msg}`).join("<br>")+(errs.length>8?`<br>…共 ${errs.length} 个问题 / ${errs.length} problemas en total`:""),false);
+  else if(P.skus.length)msg("allocMsg",`✓ 校验通过：${P.skus.length} 个 SKU，${P.skus.reduce((a,s)=>a+(s.slots||[]).length,0)} 个托盘库位 / Validación correcta: ${P.skus.length} SKU, ${P.skus.reduce((a,s)=>a+(s.slots||[]).length,0)} ubicaciones de tarima`,true)}
 function setMode(i,v){P.skus[i].mode=v||null;P.skus[i].locked=false;save()}
 function setSlots(i,v){const s=P.skus[i];if(Core.modeOf(P,s)==="single")s.zone=v.trim().toUpperCase()||null;else s.slots=Core.parseSlots(v);s.locked=true;save()}
 ["defMode","defN","rows","perRow","coordStyle"].forEach(id=>$(id).onchange=()=>{const c=P.config;c.defaultMode=$("defMode").value;c.defaultN=Math.max(1,+$("defN").value||30);
   c.rows=$("rows").value.toUpperCase().replace(/[^A-Z]/g,"").split("");c.perRow=Math.max(1,+$("perRow").value||100);c.coordStyle=$("coordStyle").value;save()});
 function setStyle(v){if(Core.styleOf(P)===v)return;P.config.coordStyle=v;P.skus.forEach(s=>{s.locked=false;s.zone=null});
-  try{if(P.skus.length)Core.autoAssign(P,{keepManual:false})}catch(x){msg("allocMsg",x.message,false)}save();if(P.skus.length)msg("allocMsg","已切换坐标样式并重新分配："+({alpha:"纯字母",number:"纯数字",alphanum:"字母+数字"})[v],true)}
+  try{if(P.skus.length)Core.autoAssign(P,{keepManual:false})}catch(x){msg("allocMsg",x.message,false)}save();if(P.skus.length)msg("allocMsg","已切换坐标样式并重新分配 / Formato cambiado y reasignado："+({alpha:"纯字母 / Solo letras",number:"纯数字 / Solo números",alphanum:"字母+数字 / Letra + número"})[v],true)}
 function doAuto(keep){try{if(!keep)P.skus.forEach(s=>s.locked=false);const r=Core.autoAssign(P,{keepManual:keep});save();
-  msg("allocMsg",`已分配 ${r.totalSlots} 个托盘库位，每排最多 ${r.rowLength} 个（${P.config.rows.join("、")} 排）`,Core.validate(P).length===0)}catch(x){msg("allocMsg",x.message,false)}}
-function publish(){const e=Core.validate(P);if(!P.skus.length){alert("映射为空");return}
-  if(e.length&&!confirm(`还有 ${e.length} 个问题（如重复库位），仍要发布吗？`))return;
-  if(!confirm(`确认发布？\n${P.name}：${P.skus.length} 个 SKU 将立即用于扫描页。`))return;
-  Core.publishDraft(P);S=Core.loadState(P);renderAll();$("pubMsg").innerHTML='<div class="msg ok">已发布 ✓ 扫描页立即生效（同一浏览器）。现在可点下方“📡 推送到设备”发给树莓派。</div>';renderPush&&renderPush()}
+  msg("allocMsg",`已分配 ${r.totalSlots} 个托盘库位，每排最多 ${r.rowLength} 个（${P.config.rows.join("、")} 排）/ ${r.totalSlots} ubicaciones asignadas, máx. ${r.rowLength} por fila (filas ${P.config.rows.join(", ")})`,Core.validate(P).length===0)}catch(x){msg("allocMsg",x.message,false)}}
+function publish(){const e=Core.validate(P);if(!P.skus.length){alert("映射为空 / El mapeo está vacío");return}
+  if(e.length&&!confirm(`还有 ${e.length} 个问题（如重复库位），仍要发布吗？\nHay ${e.length} problemas (p. ej. ubicaciones repetidas). ¿Publicar de todos modos?`))return;
+  if(!confirm(`确认发布？\n${P.name}：${P.skus.length} 个 SKU 将立即用于扫描页。\n\n¿Confirmar publicación?\n${P.name}: ${P.skus.length} SKU se usarán de inmediato en el escáner.`))return;
+  Core.publishDraft(P);S=Core.loadState(P);renderAll();$("pubMsg").innerHTML='<div class="msg ok">已发布 ✓ 扫描页立即生效（同一浏览器）。现在可点下方“📡 推送到设备”发给树莓派。<br>Publicado ✓ El escáner ya lo usa (mismo navegador). Ahora pulse “📡 Enviar al dispositivo” para mandarlo a la Raspberry Pi.</div>';renderPush&&renderPush()}
 // ----- dashboard -----
 function renderDash(){const LP=Core.loadProject(null)||P;S=Core.loadState(LP);const pr=Core.progress(LP,S),f=($("flt").value||"").toUpperCase();
   const tb=pr.reduce((a,r)=>a+r.boxes,0),ts=pr.reduce((a,r)=>a+Math.min(r.scanned,r.boxes||r.scanned),0);
   $("kSku").textContent=pr.length;$("kBox").textContent=tb;$("kScan").textContent=Object.values(S.counts).reduce((a,b)=>a+b,0);$("kPct").textContent=tb?Math.round(ts/tb*100)+"%":"—";
-  $("progT").innerHTML="<tr><th>SKU</th><th>位置</th><th>已扫/总箱</th><th style='width:30%'>进度</th></tr>"+pr.filter(r=>!f||r.sku.includes(f)).map(r=>{const p=r.boxes?Math.min(100,r.scanned/r.boxes*100):0;
-   return `<tr><td class=sku>${esc(r.sku)}<br><small>${esc(r.name)}</small></td><td><b>${esc(r.where)}</b></td><td>${r.scanned}/${r.boxes}${r.scanned>r.boxes?" ⚠️超":""}</td><td><div class=bar><i style="width:${p}%;${r.scanned>r.boxes?"background:#e67e22":""}"></i></div></td></tr>`}).join("");
-  $("histT").innerHTML="<tr><th>时间</th><th>SKU</th><th>库位</th><th>计数</th></tr>"+S.hist.slice(0,300).map(h=>`<tr><td>${new Date(h.t).toLocaleString()}</td><td class=sku>${esc(h.sku)}</td><td><b>${esc(h.slot)}</b></td><td>${h.scanned}/${h.total||"?"}</td></tr>`).join("")}
+  $("progT").innerHTML="<tr><th>SKU</th><th>位置 / Ubicación</th><th>已扫/总箱 / Escaneadas/total</th><th style='width:30%'>进度 / Progreso</th></tr>"+pr.filter(r=>!f||r.sku.includes(f)).map(r=>{const p=r.boxes?Math.min(100,r.scanned/r.boxes*100):0;
+   return `<tr><td class=sku>${esc(r.sku)}<br><small>${esc(r.name)}</small></td><td><b>${esc(r.where)}</b></td><td>${r.scanned}/${r.boxes}${r.scanned>r.boxes?" ⚠️超 / excede":""}</td><td><div class=bar><i style="width:${p}%;${r.scanned>r.boxes?"background:#e67e22":""}"></i></div></td></tr>`}).join("");
+  $("histT").innerHTML="<tr><th>时间 / Hora</th><th>SKU</th><th>库位 / Ubicación</th><th>计数 / Conteo</th></tr>"+S.hist.slice(0,300).map(h=>`<tr><td>${new Date(h.t).toLocaleString()}</td><td class=sku>${esc(h.sku)}</td><td><b>${esc(h.slot)}</b></td><td>${h.scanned}/${h.total||"?"}</td></tr>`).join("")}
 $("flt").oninput=renderDash;
-function resetCounts(){if(confirm("清零所有扫描计数和记录？")){S=Core.newState((Core.loadProject(null)||P).id);Core.saveState(S);renderDash()}}
+function resetCounts(){if(confirm("清零所有扫描计数和记录？\n¿Reiniciar todos los contadores e historial?")){S=Core.newState((Core.loadProject(null)||P).id);Core.saveState(S);renderDash()}}
 // ----- data -----
-$("jfile").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const b=Core.importBundle(await f.text());P=b.project;Core.saveDraft(P);if(b.state){S=b.state;Core.saveState(S)}renderAll();alert("已导入为草稿："+P.skus.length+" 个 SKU，请点“同意并发布”生效")}catch(x){alert(x.message)}e.target.value=""};
+$("jfile").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const b=Core.importBundle(await f.text());P=b.project;Core.saveDraft(P);if(b.state){S=b.state;Core.saveState(S)}renderAll();alert("已导入为草稿："+P.skus.length+" 个 SKU，请点“同意并发布”生效\nImportado como borrador: "+P.skus.length+" SKU; pulse “Aprobar y publicar” para activarlo")}catch(x){alert(x.message)}e.target.value=""};
 function saveSync(){P.config.syncUrl=$("syncUrl").value.trim();save()}
-function newProj(){if(confirm("清空映射，新建项目？")){P=Core.newProject();Core.saveDraft(P);renderAll()}}
+function newProj(){if(confirm("清空映射，新建项目？\n¿Borrar el mapeo y crear un proyecto nuevo?")){P=Core.newProject();Core.saveDraft(P);renderAll()}}
 function renderAll(){const live=Core.loadProject(null),dirty=!live||JSON.stringify(live.skus)!==JSON.stringify(P.skus)||JSON.stringify(live.config)!==JSON.stringify(P.config);
   $("pname").textContent=P.name;$("pubbar").style.background=dirty?"#fef3c7":"#dcfce7";$("pubbar").querySelector("button").style.display=dirty?"":"none";
-  $("pubtxt").textContent=dirty?"⚠️ 草稿尚未发布——扫描页仍在使用"+(live?`旧映射（${live.skus.length} 个 SKU）`:"示例数据")+"，请到第 4 步同意并发布":"✓ 已发布，扫描页正在使用此映射";$("projName").value=P.name;$("syncUrl").value=P.config.syncUrl||"";renderMap();renderAlloc();renderDash();renderPublish();
-  const bb=P.skus.length?Core.briefOf(P.skus,{rows:P.meta&&P.meta.rows,skipped:P.meta&&P.meta.skipped,orders:P.meta&&P.meta.orders}):null;renderBrief("brief3",bb,"📋 清单概览");renderBrief("brief4",bb,"📋 清单概览")}
+  $("pubtxt").textContent=dirty?"⚠️ 草稿尚未发布——扫描页仍在使用"+(live?`旧映射（${live.skus.length} 个 SKU）`:"示例数据")+"，请到第 4 步同意并发布 / Borrador sin publicar: el escáner aún usa "+(live?`el mapeo anterior (${live.skus.length} SKU)`:"datos de ejemplo")+"; apruebe y publique en el paso 4":"✓ 已发布，扫描页正在使用此映射 / Publicado: el escáner usa este mapeo";$("projName").value=P.name;$("syncUrl").value=P.config.syncUrl||"";renderMap();renderAlloc();renderDash();renderPublish();
+  const bb=P.skus.length?Core.briefOf(P.skus,{rows:P.meta&&P.meta.rows,skipped:P.meta&&P.meta.skipped,orders:P.meta&&P.meta.orders}):null;renderBrief("brief3",bb,"📋 清单概览 / Resumen de la lista");renderBrief("brief4",bb,"📋 清单概览 / Resumen de la lista")}
 function renderPublish(){const er=Core.validate(P);$("pSku").textContent=P.skus.length;$("pBox").textContent=P.skus.reduce((a,s)=>a+(+s.boxes||0),0);
   $("pSlots").textContent=P.skus.reduce((a,s)=>a+(s.slots||[]).length,0);$("pIssues").textContent=er.length;$("pIssues").style.color=er.length?"#dc2626":"#16a34a";
-  $("pubMsg").innerHTML=er.length?`<div class="msg bad">有 ${er.length} 个问题：${esc(er.slice(0,4).map(e=>e.sku+" "+e.msg).join("；"))}。请回到第 3 步修改。</div>`:(P.skus.length?'<div class="msg ok">校验通过，可以发布。</div>':'<div class="msg bad">还没有 SKU，请先上传清单。</div>')}
+  $("pubMsg").innerHTML=er.length?`<div class="msg bad">有 ${er.length} 个问题：${esc(er.slice(0,4).map(e=>e.sku+" "+e.msg).join("；"))}。请回到第 3 步修改。<br>Hay ${er.length} problemas; vuelva al paso 3 para corregirlos.</div>`:(P.skus.length?'<div class="msg ok">校验通过，可以发布。/ Validación correcta, puede publicar.</div>':'<div class="msg bad">还没有 SKU，请先上传清单。/ Aún no hay SKU; suba primero la lista.</div>')}
 renderAll();
 // ----- push to devices -----
 const PK="skuPush";function pushCfg(){try{return JSON.parse(localStorage.getItem(PK))||{}}catch(e){return{}}}
 function setPushCfg(c){localStorage.setItem(PK,JSON.stringify(c))}
 (function(){const m=location.hash.match(/[#&]t=([A-Za-z0-9_-]{12,64})/);if(m){const c=pushCfg();c.topic=m[1];setPushCfg(c)}})();
-function savePush(){const c=pushCfg(),t=$("pushTopic").value.trim();if(t&&!/^[A-Za-z0-9_-]{12,64}$/.test(t)){alert("频道只能是 12-64 位字母、数字、-、_");return}
-  c.topic=t;c.server=$("pushServer").value.trim()||"https://ntfy.sh";setPushCfg(c);listenAck();renderPush();alert("已保存")}
+function savePush(){const c=pushCfg(),t=$("pushTopic").value.trim();if(t&&!/^[A-Za-z0-9_-]{12,64}$/.test(t)){alert("频道只能是 12-64 位字母、数字、-、_\nEl canal debe tener 12-64 letras, números, - o _");return}
+  c.topic=t;c.server=$("pushServer").value.trim()||"https://ntfy.sh";setPushCfg(c);listenAck();renderPush();alert("已保存 / Guardado")}
 let ackES=null,ackTopic=null;
 function listenAck(){const c=pushCfg();if(!c.topic||!window.EventSource){return}if(ackES&&ackTopic===c.topic)return;if(ackES)ackES.close();ackTopic=c.topic;
   ackES=new EventSource((c.server||"https://ntfy.sh").replace(/\/+$/,"")+"/"+c.topic+"-ack/sse?since=12h");
   ackES.onmessage=e=>{try{const m=JSON.parse(e.data);if(m.event&&m.event!=="message")return;const a=JSON.parse(m.message);const cc=pushCfg();cc.acks=cc.acks||{};
     cc.acks[a.host||"pi"]={version:a.version,t:a.t||new Date(m.time*1000).toISOString(),ok:a.ok!==false,skus:a.skus,err:a.err};setPushCfg(cc);renderPush()}catch(x){}}}
 function renderPush(){const c=pushCfg();if(!$("pushTopic"))return;$("pushTopic").value=c.topic||"";$("pushServer").value=c.server||"https://ntfy.sh";
-  $("pushTopicShow").textContent=c.topic?c.topic.slice(0,10)+"…":"未设置";$("pushVer").textContent=c.last?c.last.version:"—";
+  $("pushTopicShow").textContent=c.topic?c.topic.slice(0,10)+"…":"未设置 / Sin configurar";$("pushVer").textContent=c.last?c.last.version:"—";
   const acks=Object.entries(c.acks||{}).filter(([h,a])=>c.last&&a.version===c.last.version);
-  $("pushAck").innerHTML=!c.last?"—":acks.length?acks.map(([h,a])=>`<span style="color:${a.ok?"#16a34a":"#dc2626"}">${a.ok?"✓":"✗"} ${esc(h)}</span>`).join("<br>"):'<span style="color:#d97706">等待中…</span>';
-  if(c.last&&acks.length){const bad=acks.filter(([h,a])=>!a.ok);$("pushMsg").innerHTML=bad.length?`<div class="msg bad">设备报错：${esc(bad.map(([h,a])=>h+" "+(a.err||"")).join("；"))}</div>`:`<div class="msg ok">✅ ${esc(acks.map(([h])=>h).join("、"))} 已收到 ${esc(c.last.version)}（${esc(c.last.project||"")}，${c.last.skus} 个 SKU），已生效。</div>`}}
-async function doPush(){const live=Core.loadProject(null),c=pushCfg();if(!live||!live.skus.length){alert("请先“同意并发布”，再推送");return}
-  if(!c.topic){alert("请先到“数据与设置”设置设备推送频道");goStep("data");return}
-  const dirty=JSON.stringify(live.skus)!==JSON.stringify(P.skus);if(dirty&&!confirm("草稿还有未发布的修改。将推送的是上次已发布的版本，继续？"))return;
-  const btn=$("pushBtn");btn.disabled=true;btn.textContent="推送中…";listenAck();
+  $("pushAck").innerHTML=!c.last?"—":acks.length?acks.map(([h,a])=>`<span style="color:${a.ok?"#16a34a":"#dc2626"}">${a.ok?"✓":"✗"} ${esc(h)}</span>`).join("<br>"):'<span style="color:#d97706">等待中… / Esperando…</span>';
+  if(c.last&&acks.length){const bad=acks.filter(([h,a])=>!a.ok);$("pushMsg").innerHTML=bad.length?`<div class="msg bad">设备报错 / Error del dispositivo：${esc(bad.map(([h,a])=>h+" "+(a.err||"")).join("；"))}</div>`:`<div class="msg ok">✅ ${esc(acks.map(([h])=>h).join("、"))} 已收到 ${esc(c.last.version)}（${esc(c.last.project||"")}，${c.last.skus} 个 SKU），已生效。<br>✅ ${esc(acks.map(([h])=>h).join(", "))} recibió ${esc(c.last.version)} (${esc(c.last.project||"")}, ${c.last.skus} SKU) y ya está activo.</div>`}}
+async function doPush(){const live=Core.loadProject(null),c=pushCfg();if(!live||!live.skus.length){alert("请先“同意并发布”，再推送\nPrimero “Aprobar y publicar”, luego enviar");return}
+  if(!c.topic){alert("请先到“数据与设置”设置设备推送频道\nConfigure primero el canal en “Datos y ajustes”");goStep("data");return}
+  const dirty=JSON.stringify(live.skus)!==JSON.stringify(P.skus);if(dirty&&!confirm("草稿还有未发布的修改。将推送的是上次已发布的版本，继续？\nEl borrador tiene cambios sin publicar. Se enviará la última versión publicada. ¿Continuar?"))return;
+  const btn=$("pushBtn");btn.disabled=true;btn.innerHTML="推送中…<span class=es>Enviando…</span>";listenAck();
   try{const q=JSON.parse(JSON.stringify(live));q.config.push={topic:c.topic,server:c.server};const r=await Core.pushToDevices(q);
     c.last={version:r.version,t:new Date().toISOString(),project:live.name,skus:r.skus};setPushCfg(c);
-    $("pushMsg").innerHTML=`<div class="msg ok">已推送 ${esc(r.version)}：${esc(live.name)}，${r.skus} 个 SKU（${r.parts} 段）。等待树莓派确认…</div>`;renderPush();
-    setTimeout(()=>{const cc=pushCfg();if(cc.last&&cc.last.version===r.version&&!Object.values(cc.acks||{}).some(a=>a.version===r.version))$("pushMsg").innerHTML='<div class="msg bad">已发出，但 20 秒内没有设备确认。请检查树莓派是否开机联网、频道是否一致。设备开机后会自动取到这次推送（12 小时内）。</div>'},20000)}
-  catch(x){$("pushMsg").innerHTML=`<div class="msg bad">❌ ${esc(x.message)}（请检查网络）</div>`}
-  finally{btn.disabled=false;btn.textContent="📡 推送到设备"}}
+    $("pushMsg").innerHTML=`<div class="msg ok">已推送 ${esc(r.version)}：${esc(live.name)}，${r.skus} 个 SKU（${r.parts} 段）。等待树莓派确认…<br>Enviado ${esc(r.version)}: ${esc(live.name)}, ${r.skus} SKU (${r.parts} partes). Esperando confirmación de la Raspberry Pi…</div>`;renderPush();
+    setTimeout(()=>{const cc=pushCfg();if(cc.last&&cc.last.version===r.version&&!Object.values(cc.acks||{}).some(a=>a.version===r.version))$("pushMsg").innerHTML='<div class="msg bad">已发出，但 20 秒内没有设备确认。请检查树莓派是否开机联网、频道是否一致。设备开机后会自动取到这次推送（12 小时内）。<br>Enviado, pero ningún dispositivo confirmó en 20 s. Verifique que la Raspberry Pi esté encendida y conectada y que el canal coincida. Al encenderse recibirá este envío (dentro de 12 horas).</div>'},20000)}
+  catch(x){$("pushMsg").innerHTML=`<div class="msg bad">❌ ${esc(x.message)}（请检查网络 / Revise la conexión）</div>`}
+  finally{btn.disabled=false;btn.innerHTML="📡 推送到设备<span class=es>Enviar al dispositivo</span>"}}
 listenAck();renderPush();
 </script></html>

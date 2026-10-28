@@ -1,28 +1,28 @@
 <!doctype html><html lang=zh><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
-<title>SKU 分拣测试</title><style>
+<title>SKU 分拣扫描 / Escaneo SKU</title><style>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@500;700&family=Noto+Sans+SC:wght@400;700&display=swap");body{font-family:Inter,"Noto Sans SC","PingFang SC",sans-serif;margin:0;background:#0f172a;color:#e2e8f0;text-align:center}
-.btn{display:block;margin:14px 16px;padding:26px 10px;font-size:26px;font-weight:700;border-radius:18px;background:#4f46e5;color:#fff;box-shadow:0 8px 24px #4f46e555;border:0;width:calc(100% - 32px)}
+.btn{box-sizing:border-box;display:block;margin:14px 16px;padding:26px 10px;font-size:26px;font-weight:700;border-radius:18px;background:#4f46e5;color:#fff;box-shadow:0 8px 24px #4f46e555;border:0;width:calc(100% - 32px)}
 .sm{font-size:17px;min-height:48px;padding:12px 16px;background:#1e293b;color:#e2e8f0;border:0;border-radius:12px}
-#slot{font-size:34vw;font-weight:800;color:#ffd400;line-height:1;margin:6px 0}#cnt{font-size:40px;font-weight:700;color:#7f7}
+#slot{font-size:34vw;font-weight:800;color:#ffd400;line-height:1;margin:6px 0}#cnt{font-size:28px;line-height:1.25;padding:0 10px;font-weight:700;color:#7f7}
 #sku{font-size:22px;word-break:break-all}#info{font-size:14px;color:#aaa;padding:0 12px;word-break:break-all}
 #raw{font-size:13px;color:#ccc;text-align:left;padding:10px;white-space:pre-wrap;word-break:break-all}
 input[type=text]{font-size:20px;min-height:52px;padding:12px;width:62%;border-radius:10px;border:0}.hide{display:none}
 table{width:100%;border-collapse:collapse;font-size:14px}td{border-bottom:1px solid #333;padding:5px}td.s{color:#ffd400;font-weight:700;font-size:18px}
 details{margin:10px;text-align:left}
 </style>
-<h2 style="margin:10px 10px 0">SKU 分拣扫描</h2><div id=pinfo style="color:#888;font-size:14px"></div>
-<label class=btn for=f>📷 拍照 / 上传标签</label><input id=f class=hide type=file accept="image/*" capture=environment>
+<h2 style="margin:10px 10px 0">SKU 分拣扫描<br><span style="font-size:.75em">Escaneo y clasificación SKU</span></h2><div id=pinfo style="color:#888;font-size:14px"></div>
+<label class=btn for=f>📷 拍照 / 上传标签<br><span style="font-size:20px">Tomar foto / subir etiqueta</span></label><input id=f class=hide type=file accept="image/*" capture=environment>
 <div id=status style="font-size:18px;color:#aaa;min-height:24px"></div>
 <div id=res class=hide><div id=slot></div><div id=cnt></div><div id=sku></div><div id=info></div>
-<button class=sm style="margin:10px" onclick=speak()>🔊 再播一次</button></div>
-<div id=nf class=hide><div style="color:#f77;font-size:22px">未识别到 SKU，请手动输入</div></div>
-<div style="margin:12px"><input id=m type=text list=skus placeholder="手动输入 SKU" autocapitalize=characters> <button class=sm onclick=man()>确定</button></div>
+<button class=sm style="margin:10px" onclick=speak()>🔊 再播一次 / Repetir</button></div>
+<div id=nf class=hide><div style="color:#f77;font-size:22px">未识别到 SKU，请手动输入<br>No se reconoció el SKU, escríbalo a mano</div></div>
+<div style="margin:12px"><input id=m type=text list=skus placeholder="手动输入 SKU / Escribir SKU" autocapitalize=characters> <button class=sm onclick=man()>确定 / OK</button></div>
 <datalist id=skus></datalist>
-<details><summary>OCR 原文 / 条码</summary><div id=raw></div></details>
-<details><summary>扫描记录</summary><table id=hist></table></details>
-<details><summary>库位计划与进度</summary><table id=plan></table></details>
-<button class=sm style="margin:14px" onclick=rst()>清零所有计数</button><label class=sm style="display:inline-block">导入映射 JSON<input type=file id=jf accept=".json" class=hide></label> <a href="admin.html" style="color:#8cf">管理后台</a>
-<p style="font-size:12px;color:#666">全部在手机本地运行；计数保存在本浏览器。</p>
+<details><summary>OCR 原文 / 条码 · Texto OCR / código de barras</summary><div id=raw></div></details>
+<details><summary>扫描记录 / Historial de escaneos</summary><table id=hist></table></details>
+<details><summary>库位计划与进度 / Plan de ubicaciones y progreso</summary><table id=plan></table></details>
+<button class=sm style="margin:14px" onclick=rst()>清零所有计数 / Reiniciar contadores</button><label class=sm style="display:inline-block">导入映射 JSON / Importar mapeo JSON<input type=file id=jf accept=".json" class=hide></label> <a href="admin.html" style="color:#8cf">管理后台 / Administración</a>
+<p style="font-size:12px;color:#666">全部在手机本地运行；计数保存在本浏览器。/ Todo funciona en el teléfono; los contadores se guardan en este navegador.</p>
 <canvas id=cv class=hide></canvas>
 <script src="core.js"></script><script src="plan_seed.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -30,7 +30,7 @@ details{margin:10px;text-align:left}
 <script>
 let P=Core.loadProject(window.SEED_PROJECT?JSON.parse(JSON.stringify(SEED_PROJECT)):null), S=Core.loadState(P), PLAN={};
 const SKU_RE=Core.SKU_RE; const $=id=>document.getElementById(id);
-function reloadProject(){P=Core.loadProject(P);S=Core.loadState(P);PLAN=Object.fromEntries(P.skus.map(x=>[x.sku,x.slots]));$("pinfo").textContent=P.name+" · "+P.skus.length+" 个 SKU";renderPlan();renderHist()}
+function reloadProject(){P=Core.loadProject(P);S=Core.loadState(P);PLAN=Object.fromEntries(P.skus.map(x=>[x.sku,x.slots]));$("pinfo").textContent=P.name+" · "+P.skus.length+" 个 SKU / SKUs";renderPlan();renderHist()}
 window.addEventListener("storage",e=>{if(e.key==="skuProject")reloadProject()});   // admin published in another tab
 let last=null,lastKind=null;
 function pickVoice(prefixes){const vs=speechSynthesis.getVoices();for(const p of prefixes){const v=vs.find(v=>v.lang.replace("_","-").startsWith(p));if(v)return v}return null}
@@ -40,9 +40,9 @@ function speak(){if(!last||!window.speechSynthesis)return;speechSynthesis.cancel
   speechSynthesis.speak(u1);speechSynthesis.speak(u2)}
 function show(sku,extra,src){P=Core.loadProject(P);S=Core.loadState(P);const r=Core.scan(P,S,sku,src);Core.saveState(S);last=r.slot;lastKind=r.mode==="single"?"zone":null;
   $("nf").classList.add("hide");$("res").classList.remove("hide");$("slot").textContent=r.slot;
-  $("cnt").textContent=(r.mode==="pallet"?`本托 ${r.k}/${r.n}`:"单一区域")+(r.total?` · 共 ${r.scanned}/${r.total} 箱`:` · 第 ${r.scanned} 箱`)+(r.isNew&&r.mode==="pallet"?" · 新托盘":"");
+  $("cnt").textContent=(r.mode==="pallet"?`本托 / Tarima ${r.k}/${r.n}`:"单一区域 / Zona única")+(r.total?` · 共 ${r.scanned}/${r.total} 箱 / cajas`:` · 第 ${r.scanned} 箱 / caja n.º ${r.scanned}`)+(r.isNew&&r.mode==="pallet"?" · 新托盘 / Tarima nueva":"");
   $("sku").textContent=sku+(r.name?"  "+r.name:"");
-  $("info").textContent=(r.planned?"计划内":"不在计划中，自动分配")+(r.over?" · ⚠️ 已超出预报箱数":"")+(extra||"");speak();renderHist();renderPlan()}
+  $("info").textContent=(r.planned?"计划内 / En el plan":"不在计划中，自动分配 / Fuera del plan, asignación automática")+(r.over?" · ⚠️ 已超出预报箱数 / Supera las cajas previstas":"")+(extra||"");speak();renderHist();renderPlan()}
 function renderHist(){$("hist").innerHTML=S.hist.slice(0,200).map(h=>`<tr><td>${new Date(h.t).toLocaleTimeString()}</td><td>${h.sku}</td><td class=s>${h.slot}</td><td>${h.scanned}/${h.total||"?"}</td></tr>`).join("")}
 function renderPlan(){$("plan").innerHTML=Core.progress(P,S).map(r=>`<tr><td>${r.sku}</td><td class=s>${r.where}</td><td>${r.scanned}/${r.boxes}</td></tr>`).join("");
   $("skus").innerHTML=P.skus.map(k=>`<option value="${k.sku}">`).join("")}
@@ -80,26 +80,26 @@ function lev(a,b){const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1
   for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
   return d[a.length][b.length]}
 async function analyze(file){
-  const st=$("status");st.textContent="读取图片…";const img=await loadImg(file); // browsers apply EXIF orientation when drawing
+  const st=$("status");st.textContent="读取图片… / Leyendo imagen…";const img=await loadImg(file); // browsers apply EXIF orientation when drawing
   const full=toCanvas(img,2000);const label=cropLabel(full);let barcodes=[];
-  st.textContent="读条码…";
+  st.textContent="读条码… / Leyendo código de barras…";
   try{for(const c of [label,full]){const r=await ZXingWASM.readBarcodes(c.getContext("2d").getImageData(0,0,c.width,c.height),{tryHarder:true,maxNumberOfSymbols:4});
       barcodes=r.filter(x=>x.isValid&&x.text).map(x=>x.text);if(barcodes.length)break}}catch(e){console.log("zxing",e)}
   let sku=findSku(barcodes),texts=[];
-  st.textContent="文字识别中…（首次需下载模型，约10–20秒）";
+  st.textContent="文字识别中…（首次需下载模型，约10–20秒）/ Reconociendo texto… (la primera vez descarga el modelo, 10–20 s)";
   const w=await getWorker();const pc=prep(label);
   for(const psm of ["11","3"]){ if(sku&&PLAN[sku])break; await w.setParameters({tessedit_pageseg_mode:psm});
     const {data}=await w.recognize(pc);texts=texts.concat(data.text.split("\n").filter(x=>x.trim()));sku=findSku(barcodes)||findSku(texts)}
-  $("raw").textContent="条码: "+(barcodes.join(", ")||"无")+"\n\nOCR:\n"+texts.join("\n");
+  $("raw").textContent="条码 / Código: "+(barcodes.join(", ")||"无 / ninguno")+"\n\nOCR:\n"+texts.join("\n");
   st.textContent="";return {sku,barcodes,texts}}
 $("f").onchange=async e=>{const file=e.target.files[0];if(!file)return;try{
   const r=await analyze(file);window.lastResult=r;
-  if(r.sku)show(r.sku,(r.barcodes.length?" · 条码 "+r.barcodes.join(", "):""),"photo");
+  if(r.sku)show(r.sku,(r.barcodes.length?" · 条码 / código "+r.barcodes.join(", "):""),"photo");
   else{$("res").classList.add("hide");$("nf").classList.remove("hide");$("raw").parentElement.open=true}
- }catch(x){$("status").textContent="出错: "+x}e.target.value=""};
-function man(){const v=$("m").value.trim().toUpperCase();if(!v)return;show(v," · 手动输入","manual");$("m").value=""}
-function rst(){if(confirm("确定清零所有扫描计数？")){S=Core.newState(P.id);Core.saveState(S);renderHist();renderPlan();$("status").textContent="已清零"}}
-$("jf").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const b=Core.importBundle(await f.text());Core.saveProject(b.project);if(b.state)Core.saveState(b.state);reloadProject();alert("已导入映射："+P.skus.length+" 个 SKU")}catch(x){alert(x.message)}e.target.value=""};
+ }catch(x){$("status").textContent="出错 / Error: "+x}e.target.value=""};
+function man(){const v=$("m").value.trim().toUpperCase();if(!v)return;show(v," · 手动输入 / manual","manual");$("m").value=""}
+function rst(){if(confirm("确定清零所有扫描计数？\n¿Reiniciar todos los contadores de escaneo?")){S=Core.newState(P.id);Core.saveState(S);renderHist();renderPlan();$("status").textContent="已清零 / Reiniciado"}}
+$("jf").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const b=Core.importBundle(await f.text());Core.saveProject(b.project);if(b.state)Core.saveState(b.state);reloadProject();alert("已导入映射 / Mapeo importado："+P.skus.length+" 个 SKU / SKUs")}catch(x){alert(x.message)}e.target.value=""};
 setInterval(()=>Core.sync(P,S).catch(()=>{}),Core.SYNC_MS);
 window.analyzeFile=analyze;reloadProject();speechSynthesis&&speechSynthesis.getVoices();
 </script></html>
